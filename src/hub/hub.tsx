@@ -16,10 +16,10 @@ import { Image } from "azure-devops-ui/Image";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
 import { Card } from "azure-devops-ui/Card";
-import { Table } from "azure-devops-ui/Table";
-import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
+import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
-import { Tenants, getURIsForTenant } from "./TenantData";
+import { Tenants, getURIsForTenant, IVersionTableItem } from "./TenantData";
+import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 
 interface IHubState {
   dialogShown: boolean;
@@ -27,7 +27,53 @@ interface IHubState {
   userName: string;
 }
 
-class Hub extends React.Component<{}, IHubState> {
+function onSize(event: MouseEvent, index: number, width: number) {
+  (columns[index].width as ObservableValue<number>).value = width;
+}
+
+const columns = [
+  {
+    id: "serviceName",
+    name: "Service Name",
+    onSize: onSize,
+    readonly: true,
+    renderCell: renderSimpleCell,
+    sortProps: {
+      ariaLabelAscending: "Sorted A to Z",
+      ariaLabelDescending: "Sorted Z to A",
+    },
+    width: new ObservableValue(-30),
+  },
+  {
+    id: "branch",
+    maxWidth: 300,
+    name: "Branch",
+    onSize: onSize,
+    readonly: true,
+    renderCell: renderSimpleCell,
+    sortProps: {
+      ariaLabelAscending: "Sorted low to high",
+      ariaLabelDescending: "Sorted high to low",
+    },
+    width: new ObservableValue(-30),
+  },
+  {
+    id: "build",
+    name: "Build",
+    width: new ObservableValue(-40),
+    readonly: true,
+    renderCell: renderSimpleCell,
+  },
+  {
+    id: "commit",
+    name: "Commit",
+    width: new ObservableValue(-40),
+    readonly: true,
+    renderCell: renderSimpleCell,
+  }
+];
+
+class Hub extends React.Component<{}, any> {
 
   constructor(props: {}) {
     super(props);
@@ -36,7 +82,8 @@ class Hub extends React.Component<{}, IHubState> {
     this.state = {
       dialogShown: false,
       panelShown: false,
-      userName: ''
+      userName: '',
+      versions: []
     };
   }
 
@@ -46,8 +93,13 @@ class Hub extends React.Component<{}, IHubState> {
     this.setUserCredentials(userName);
 
     const uris = getURIsForTenant('esprit');
-    const allVersions = await Promise.all(uris.map(async (uri) => await (await fetch(`https://${uri}`)).json()));
-    console.log(allVersions);
+    const allVersions = await Promise.all(uris.map(async (uri) => {
+      let res = await (await fetch(`https://${uri}`)).json();
+      res['serviceName'] = uri;
+      return res;
+    }
+    ));
+    this.setState({ versions: allVersions });
   }
 
   setUserCredentials(credentials: string) {
@@ -55,6 +107,7 @@ class Hub extends React.Component<{}, IHubState> {
   }
 
   public render(): JSX.Element {
+    const tableItems = new ObservableArray<IVersionTableItem>(this.state.versions);
 
     return (
       <Page className="flex-grow">
@@ -70,68 +123,18 @@ class Hub extends React.Component<{}, IHubState> {
             </HeaderDescription>
           </HeaderTitleArea>
         </CustomHeader>
-        <ZeroData
-          imagePath="../../../static/img/world.png"
-          imageAltText="World image"
-          primaryText="Hello Hooray!"
-          secondaryText={
-            <span>
-              Let also say hello! {this.state.userName}
-            </span>
-          }
-          actionText="Open Dialog"
-          actionType={ZeroDataActionType.ctaButton}
-          onActionClick={this.openDialog.bind(this)}
-        />
-        {/* <Card className="flex-grow bolt-table-card" titleProps={{ text: "Food Inventory" }} contentProps={{ contentPadding: false }}>
-          <Table
-            ariaLabel="Basic Table"
-            columns={fixedColumns}
-            itemProvider={tableItemsNoIcons}
-            role="table"
+
+        <Card className="flex-grow bolt-table-card" contentProps={{ contentPadding: false }}>
+          <Table<IVersionTableItem>
+            ariaLabel="Table with sorting"
             className="table-example"
+            columns={columns}
             containerClassName="h-scroll-auto"
+            itemProvider={tableItems}
+            role="table"
           />
-        </Card> */}
-        {this.state.dialogShown && (
-          <Dialog
-            className="flex-wrap"
-            titleProps={{ text: "Hey" }}
-            onDismiss={this.closeDialog.bind(this)}
-            footerButtonProps={[
-              {
-                text: "Close",
-                primary: true,
-                onClick: this.closeDialog.bind(this)
-              }
-            ]}
-          >
-            <Image
-              className="content"
-              alt="World image"
-              src="../../../static/img/world.png"
-            />
-          </Dialog>
-        )}
-        {this.state.panelShown && (
-          <Panel
-            titleProps={{ text: "Hello Panel!" }}
-            onDismiss={this.closePanel.bind(this)}
-            footerButtonProps={[
-              {
-                text: "close",
-                primary: true,
-                onClick: this.closePanel.bind(this)
-              }
-            ]}
-          >
-            <Image
-              className="content"
-              alt="World image"
-              src="../../../static/img/world.png"
-            />
-          </Panel>
-        )}
+        </Card>
+
       </Page>
     );
   }

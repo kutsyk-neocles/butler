@@ -1,3 +1,6 @@
+import { ISimpleListCell } from "azure-devops-ui/List";
+import { ISimpleTableCell } from "azure-devops-ui/Table";
+
 export const Tenants = [
     'bestseller',
     'esprit',
@@ -17,6 +20,13 @@ const servicePath = [
 
 function getURIsForTenant(tenantName: string) {
     return servicePath.map(x => `epicuro${tenantName}test.epicurotesting.com${x}/version.json`);
+}
+
+export interface IVersionTableItem extends ISimpleTableCell {
+    serviceName: string;
+    build: string;
+    branch: string;
+    commit: string;
 }
 
 export { getURIsForTenant };
