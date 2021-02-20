@@ -19,7 +19,7 @@ import { Card } from "azure-devops-ui/Card";
 import { Table } from "azure-devops-ui/Table";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 
-import { fixedColumns, tableItemsNoIcons } from "./TableData";
+import { Tenants, getURIsForTenant } from "./TenantData";
 
 interface IHubState {
   dialogShown: boolean;
@@ -44,6 +44,10 @@ class Hub extends React.Component<{}, IHubState> {
     await SDK.init();
     const userName = `${SDK.getUser().displayName}`;
     this.setUserCredentials(userName);
+
+    const uris = getURIsForTenant('esprit');
+    const allVersions = await Promise.all(uris.map(async (uri) => await (await fetch(`https://${uri}`)).json()));
+    console.log(allVersions);
   }
 
   setUserCredentials(credentials: string) {
