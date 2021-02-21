@@ -13,7 +13,7 @@ import { Image } from "azure-devops-ui/Image";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
 import { Card } from "azure-devops-ui/Card";
-import { renderSimpleCell, Table } from "azure-devops-ui/Table";
+import { renderSimpleCell, Table, TableColumnLayout } from "azure-devops-ui/Table";
 
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 
@@ -23,6 +23,32 @@ export interface IEpicuroVersion {
   build: string;
   commit: string;
 }
+
+const fixedVersionColumns = [
+  {
+      columnLayout: TableColumnLayout.singleLinePrefix,
+      id: "serviceName",
+      name: "Service Name",
+      readonly: true,
+      renderCell: renderSimpleCell,
+      width: new ObservableValue(-30),
+  },
+  {
+      id: "branch",
+      name: "Branch",
+      readonly: true,
+      renderCell: renderSimpleCell,
+      width: new ObservableValue(-30),
+  },
+  {
+      columnLayout: TableColumnLayout.none,
+      id: "build",
+      name: "Build",
+      readonly: true,
+      renderCell: renderSimpleCell,
+      width: new ObservableValue(-40),
+  },
+];
 
 export class VersionCard extends React.Component<any, any> {
 
@@ -34,14 +60,14 @@ export class VersionCard extends React.Component<any, any> {
   public async componentDidMount() {
   }
 
-  private collapsed = new ObservableValue<boolean>(false);
+  private collapsed = new ObservableValue<boolean>(true);
 
   private onCollapseClicked = () => {
     this.collapsed.value = !this.collapsed.value;
   };
 
   public render(): JSX.Element {
-    // const tableItems = new ObservableArray<IVersionTableItem>(this.state.versions);
+    const tableItems = new ObservableArray<IEpicuroVersion>(this.props.tenantVersion.versions);
 
     return (
         <Card
@@ -52,15 +78,14 @@ export class VersionCard extends React.Component<any, any> {
           titleProps={{ text: `${this.props.tenantVersion.tenant} - ${this.props.tenantVersion.env}` }}
         >
           <div className="flex-row" style={{ flexWrap: "wrap" }}>
-            <h1>Hello World</h1>
-            {/* <Table<IVersionTableItem>
+            <Table<Partial<any>>
               ariaLabel="Table with sorting"
-              className="table-example"
-              columns={columns}
+              className=""
+              columns={fixedVersionColumns}
               containerClassName="h-scroll-auto"
               itemProvider={tableItems}
               role="table"
-            /> */}
+            />
           </div>
         </Card>
     );

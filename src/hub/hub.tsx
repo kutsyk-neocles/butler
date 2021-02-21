@@ -68,12 +68,11 @@ class Hub extends React.Component<{}, any> {
 
   public render(): JSX.Element {
     const items = [];
-    console.log(this.state.versionResults);
+    
     if (this.state.versionResults)
     {
       for (const [index, value] of this.state.versionResults.entries()) {
         items.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
-        // console.log(index, value);
       }
     }
 
