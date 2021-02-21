@@ -21,7 +21,27 @@ import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 import { Tenants, EpicuroServices, IVersionTableItem, IEpicuroService, getUiUri } from "../data/tenants-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IEpicuroVersion, VersionCard } from "../version-card/version-card"
-import { DomainTest } from "../data/domains-service";
+import { DomainProd, DomainTest } from "../data/domains-service";
+
+async function getVersionsForEnv(env: string, domain: string) {
+  let versionResults = [];
+  for (let tenant of Tenants) {
+    let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
+    for (let service of EpicuroServices) {
+      let uri = getUiUri(tenant, env, domain);
+      let versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
+
+      tenantResult.versions.push({
+        serviceName: service.name,
+        branch: versionForService.branch,
+        build: versionForService.build,
+        commit: versionForService.commit
+      });
+    }
+    versionResults.push(tenantResult);
+  }
+  return versionResults;
+}
 
 class Hub extends React.Component<{}, any> {
 
@@ -37,42 +57,34 @@ class Hub extends React.Component<{}, any> {
     await SDK.init();
     const userName = `${SDK.getUser().displayName}`;
     this.setUserCredentials(userName);
-    
-    let versionResults = [];
-    for (let tenant of Tenants)
-    {
-      let tenantResult = {tenant: tenant.name, env: 'test', versions: new Array<IEpicuroVersion>()};
-      for (let service of EpicuroServices)
-      {
-        let uri = getUiUri(tenant, 'test', DomainTest);
-        let versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
-        tenantResult.versions.push({
-          serviceName: service.name,
-          branch: versionForService.branch,
-          build: versionForService.build,
-          commit: versionForService.commit
-        });
-      }
-      versionResults.push(tenantResult);
-    }
 
-    console.log(versionResults);
+    let testVersionResults = await getVersionsForEnv('test', DomainTest);
+    let accVersionResults = await getVersionsForEnv('acc', DomainTest);
+
+
     this.setState({
-      versionResults: versionResults
+      testVersionResults: testVersionResults,
+      accVersionResults: accVersionResults
     })
   }
 
   setUserCredentials(credentials: string) {
     this.setState({ userName: credentials });
-  } 
+  }
 
   public render(): JSX.Element {
-    const items = [];
-    
-    if (this.state.versionResults)
-    {
-      for (const [index, value] of this.state.versionResults.entries()) {
-        items.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
+    const testItems = [];
+    const accItems = [];
+
+    if (this.state.testVersionResults) {
+      for (const [index, value] of this.state.testVersionResults.entries()) {
+        testItems.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
+      }
+    }
+
+    if (this.state.accVersionResults) {
+      for (const [index, value] of this.state.accVersionResults.entries()) {
+        accItems.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
       }
     }
 
@@ -90,9 +102,12 @@ class Hub extends React.Component<{}, any> {
             </HeaderDescription>
           </HeaderTitleArea>
         </CustomHeader>
-
-        {items}
-
+        <div className="flex-column">
+          <Header title={"Test"} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
+          {testItems}
+          <Header title={"ACC"} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
+          {accItems}
+        </div>
       </Page>
     );
   }
