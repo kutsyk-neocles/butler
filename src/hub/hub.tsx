@@ -18,60 +18,9 @@ import { Panel } from "azure-devops-ui/Panel";
 import { Card } from "azure-devops-ui/Card";
 import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
-import { Tenants, getURIsForTenant, IVersionTableItem } from "./TenantData";
+import { Tenants, getURIsForTenant, IVersionTableItem } from "../data/tenants-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
-
-interface IHubState {
-  dialogShown: boolean;
-  panelShown: boolean;
-  userName: string;
-}
-
-function onSize(event: MouseEvent, index: number, width: number) {
-  (columns[index].width as ObservableValue<number>).value = width;
-}
-
-const columns = [
-  {
-    id: "serviceName",
-    name: "Service Name",
-    onSize: onSize,
-    readonly: true,
-    renderCell: renderSimpleCell,
-    sortProps: {
-      ariaLabelAscending: "Sorted A to Z",
-      ariaLabelDescending: "Sorted Z to A",
-    },
-    width: new ObservableValue(-30),
-  },
-  {
-    id: "branch",
-    maxWidth: 300,
-    name: "Branch",
-    onSize: onSize,
-    readonly: true,
-    renderCell: renderSimpleCell,
-    sortProps: {
-      ariaLabelAscending: "Sorted low to high",
-      ariaLabelDescending: "Sorted high to low",
-    },
-    width: new ObservableValue(-30),
-  },
-  {
-    id: "build",
-    name: "Build",
-    width: new ObservableValue(-40),
-    readonly: true,
-    renderCell: renderSimpleCell,
-  },
-  {
-    id: "commit",
-    name: "Commit",
-    width: new ObservableValue(-40),
-    readonly: true,
-    renderCell: renderSimpleCell,
-  }
-];
+import { VersionCard } from "../version-card/version-card"
 
 class Hub extends React.Component<{}, any> {
 
@@ -80,10 +29,6 @@ class Hub extends React.Component<{}, any> {
     this.setUserCredentials = this.setUserCredentials.bind(this);
 
     this.state = {
-      dialogShown: false,
-      panelShown: false,
-      userName: '',
-      versions: []
     };
   }
 
@@ -91,15 +36,6 @@ class Hub extends React.Component<{}, any> {
     await SDK.init();
     const userName = `${SDK.getUser().displayName}`;
     this.setUserCredentials(userName);
-
-    const uris = getURIsForTenant('esprit');
-    const allVersions = await Promise.all(uris.map(async (uri) => {
-      let res = await (await fetch(`https://${uri}`)).json();
-      res['serviceName'] = uri;
-      return res;
-    }
-    ));
-    this.setState({ versions: allVersions });
   }
 
   setUserCredentials(credentials: string) {
@@ -124,36 +60,12 @@ class Hub extends React.Component<{}, any> {
           </HeaderTitleArea>
         </CustomHeader>
 
-        <Card className="flex-grow bolt-table-card" contentProps={{ contentPadding: false }}>
-          <Table<IVersionTableItem>
-            ariaLabel="Table with sorting"
-            className="table-example"
-            columns={columns}
-            containerClassName="h-scroll-auto"
-            itemProvider={tableItems}
-            role="table"
-          />
-        </Card>
+        <VersionCard></VersionCard>
 
       </Page>
     );
   }
 
-  private openDialog(): void {
-    this.setState({ dialogShown: true });
-  }
-
-  private closeDialog(): void {
-    this.setState({ dialogShown: false });
-  }
-
-  private openPanel(): void {
-    this.setState({ panelShown: true });
-  }
-
-  private closePanel(): void {
-    this.setState({ panelShown: false });
-  }
 }
 
 ReactDOM.render(<Hub />, document.getElementById("root"));
