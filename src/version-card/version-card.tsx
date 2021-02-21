@@ -17,9 +17,16 @@ import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 
-export class VersionCard extends React.Component<{}, any> {
+export interface IEpicuroVersion {
+  serviceName: string;
+  branch: string;
+  build: string;
+  commit: string;
+}
 
-  constructor(props: {}) {
+export class VersionCard extends React.Component<any, any> {
+
+  constructor(props: any) {
     super(props);
 
   }
@@ -42,7 +49,7 @@ export class VersionCard extends React.Component<{}, any> {
           collapsible={true}
           collapsed={this.collapsed}
           onCollapseClick={this.onCollapseClicked}
-          titleProps={{ text: "Espirt Test" }}
+          titleProps={{ text: `${this.props.tenantVersion.tenant} - ${this.props.tenantVersion.env}` }}
         >
           <div className="flex-row" style={{ flexWrap: "wrap" }}>
             <h1>Hello World</h1>

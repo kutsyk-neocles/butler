@@ -1,25 +1,42 @@
 import { ISimpleTableCell } from "azure-devops-ui/Table";
 
-export const Tenants = [
-    'bestseller',
-    'esprit',
-    'puma',
-    'brooks',
-    'ecco'
-];
+export interface ITenant {
+    name: string;
+    separateAcc: boolean;
+}
 
-const getUiUri = (tenant: string, env: string, domain: string) => `epicuro${tenant}${env}.${domain}`;
+export interface IEpicuroService {
+    name: string;
+    path: string;
+}
 
-const getApiUri = (tenant: string, env: string, domain: string) => `epicuro${tenant}${env}api.${domain}`;
-
-const services = [
+export const Tenants: Array<ITenant> = [
     {
-        name: 'UI-v1',
-        path: '/'
+        name: 'bestseller',
+        separateAcc: false
     },
     {
+        name: 'esprit',
+        separateAcc: true
+    },
+    {
+        name: 'puma',
+        separateAcc: false
+    },
+    {
+        name: 'brooks',
+        separateAcc: false
+    },
+    {
+        name: 'ecco',
+        separateAcc: false
+    }
+];
+
+export const EpicuroServices: Array<IEpicuroService> = [
+    {
         name: 'pulse-ui',
-        path: '/next/'
+        path: '/next'
     },
     {
         name: 'accounts',
@@ -43,9 +60,10 @@ const services = [
     }
 ];
 
-function getURIsForTenant(tenantName: string) {
-    return servicePath.map(x => `epicuro${tenantName}test.epicurotesting.com${x}/version.json`);
-}
+const getUiUri = (tenant: ITenant, env: string, domain: string) => env == 'acc' && !tenant.separateAcc ? `epicuro${tenant.name}test-${env}.${domain}` : `epicuro${tenant.name}${env}.${domain}`;
+
+const getApiUri = (tenant: ITenant, env: string, domain: string) => env == 'acc' && !tenant.separateAcc ? `epicuro${tenant.name}testapi-${env}.${domain}` : `epicuro${tenant.name}${env}api.${domain}`;
+
 
 export interface IVersionTableItem extends ISimpleTableCell {
     serviceName: string;
@@ -54,4 +72,4 @@ export interface IVersionTableItem extends ISimpleTableCell {
     commit: string;
 }
 
-export { getURIsForTenant };
+export { getUiUri, getApiUri };

@@ -18,9 +18,10 @@ import { Panel } from "azure-devops-ui/Panel";
 import { Card } from "azure-devops-ui/Card";
 import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
-import { Tenants, getURIsForTenant, IVersionTableItem } from "../data/tenants-service";
+import { Tenants, EpicuroServices, IVersionTableItem, IEpicuroService, getUiUri } from "../data/tenants-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
-import { VersionCard } from "../version-card/version-card"
+import { IEpicuroVersion, VersionCard } from "../version-card/version-card"
+import { DomainTest } from "../data/domains-service";
 
 class Hub extends React.Component<{}, any> {
 
@@ -36,14 +37,45 @@ class Hub extends React.Component<{}, any> {
     await SDK.init();
     const userName = `${SDK.getUser().displayName}`;
     this.setUserCredentials(userName);
+    
+    let versionResults = [];
+    for (let tenant of Tenants)
+    {
+      let tenantResult = {tenant: tenant.name, env: 'test', versions: new Array<IEpicuroVersion>()};
+      for (let service of EpicuroServices)
+      {
+        let uri = getUiUri(tenant, 'test', DomainTest);
+        let versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
+        tenantResult.versions.push({
+          serviceName: service.name,
+          branch: versionForService.branch,
+          build: versionForService.build,
+          commit: versionForService.commit
+        });
+      }
+      versionResults.push(tenantResult);
+    }
+
+    console.log(versionResults);
+    this.setState({
+      versionResults: versionResults
+    })
   }
 
   setUserCredentials(credentials: string) {
     this.setState({ userName: credentials });
-  }
+  } 
 
   public render(): JSX.Element {
-    const tableItems = new ObservableArray<IVersionTableItem>(this.state.versions);
+    const items = [];
+    console.log(this.state.versionResults);
+    if (this.state.versionResults)
+    {
+      for (const [index, value] of this.state.versionResults.entries()) {
+        items.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
+        // console.log(index, value);
+      }
+    }
 
     return (
       <Page className="flex-grow">
@@ -60,7 +92,7 @@ class Hub extends React.Component<{}, any> {
           </HeaderTitleArea>
         </CustomHeader>
 
-        <VersionCard></VersionCard>
+        {items}
 
       </Page>
     );
