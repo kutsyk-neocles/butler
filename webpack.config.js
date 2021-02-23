@@ -15,6 +15,7 @@ module.exports = {
     filename: "[name]/[name].js",
   },
   devtool: "inline-source-map",
+  context: __dirname,
   devServer: {
     https: true,
     port: 3000,
@@ -29,7 +30,8 @@ module.exports = {
     }
   },
   stats: {
-    warnings: false
+    warnings: true,
+    errorDetails: true
   },
   module: {
     rules: [

@@ -5,7 +5,7 @@
       "name": "Launch Firefox",
       "type": "firefox",
       "request": "launch",
-      "url": "https://localhost:3000/dist/hub",
+      "url": "https://localhost:3000/dist/index",
       "reAttach": true,
       "pathMappings": [
         {

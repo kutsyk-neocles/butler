@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "version-checker",
     "publisher": "Neocles",
-    "version": "1.0.8",
+    "version": "1.0.11",
     "name": "Version Checker",
     "description": "Azure DevOps Extension",
     "public": false,
@@ -49,7 +49,7 @@
                 ".hello-world-hub-group"
             ],
             "properties": {
-                "uri": "dist/hub/hub.html"
+                "uri": "dist/index/index.html"
             }
         }
     ],

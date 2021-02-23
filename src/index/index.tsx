@@ -1,4 +1,4 @@
-import "./hub.scss";
+import "./index.scss";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -18,10 +18,10 @@ import { Panel } from "azure-devops-ui/Panel";
 import { Card } from "azure-devops-ui/Card";
 import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
-import { Tenants, EpicuroServices, IVersionTableItem, IEpicuroService, getUiUri } from "../data/tenants-service";
+import { Tenants, EpicuroServices, IVersionTableItem, IEpicuroService, getUiUri } from "../tenants-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IEpicuroVersion, VersionCard } from "../version-card/version-card"
-import { DomainProd, DomainTest } from "../data/domains-service";
+import { DomainProd, DomainTest } from "../domains-service";
 
 async function getVersionsForEnv(env: string, domain: string) {
   let versionResults = [];
@@ -43,7 +43,7 @@ async function getVersionsForEnv(env: string, domain: string) {
   return versionResults;
 }
 
-class Hub extends React.Component<{}, any> {
+class Index extends React.Component<{}, any> {
 
   constructor(props: {}) {
     super(props);
@@ -114,4 +114,4 @@ class Hub extends React.Component<{}, any> {
 
 }
 
-ReactDOM.render(<Hub />, document.getElementById("root"));
+ReactDOM.render(<Index />, document.getElementById("root"));
