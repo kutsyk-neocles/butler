@@ -19,29 +19,10 @@ import { Card } from "azure-devops-ui/Card";
 import { renderSimpleCell, Table } from "azure-devops-ui/Table";
 
 import { Tenants, EpicuroServices, IVersionTableItem, IEpicuroService, getUiUri } from "../tenants-service";
+import { Environments } from "../envs-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IEpicuroVersion, VersionCard } from "../version-card/version-card"
 import { DomainProd, DomainTest } from "../domains-service";
-
-async function getVersionsForEnv(env: string, domain: string) {
-  let versionResults = [];
-  for (let tenant of Tenants) {
-    let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
-    for (let service of EpicuroServices) {
-      let uri = getUiUri(tenant, env, domain);
-      let versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
-
-      tenantResult.versions.push({
-        serviceName: service.name,
-        branch: versionForService.branch,
-        build: versionForService.build,
-        commit: versionForService.commit
-      });
-    }
-    versionResults.push(tenantResult);
-  }
-  return versionResults;
-}
 
 class Index extends React.Component<{}, any> {
 
@@ -58,14 +39,6 @@ class Index extends React.Component<{}, any> {
     const userName = `${SDK.getUser().displayName}`;
     this.setUserCredentials(userName);
 
-    let testVersionResults = await getVersionsForEnv('test', DomainTest);
-    let accVersionResults = await getVersionsForEnv('acc', DomainTest);
-
-
-    this.setState({
-      testVersionResults: testVersionResults,
-      accVersionResults: accVersionResults
-    })
   }
 
   setUserCredentials(credentials: string) {
@@ -73,20 +46,21 @@ class Index extends React.Component<{}, any> {
   }
 
   public render(): JSX.Element {
-    const testItems = [];
-    const accItems = [];
+    const items = [];
 
-    if (this.state.testVersionResults) {
-      for (const [index, value] of this.state.testVersionResults.entries()) {
-        testItems.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
+    for (const [i, env] of Environments.entries()) {
+      const versionItems = [];
+      for (const [j, tenant] of Tenants.entries()) {
+        versionItems.push(<VersionCard key={i+tenant.name+'-'+env+j} tenant={tenant} env={env}></VersionCard>)
       }
+      items.push(
+        <div className="flex-grow">
+          <Header key={env+i} title={env} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
+          {versionItems}
+        </div>
+      );
     }
 
-    if (this.state.accVersionResults) {
-      for (const [index, value] of this.state.accVersionResults.entries()) {
-        accItems.push(<VersionCard key={index} tenantVersion={value}></VersionCard>)
-      }
-    }
 
     return (
       <Page className="flex-grow">
@@ -103,10 +77,7 @@ class Index extends React.Component<{}, any> {
           </HeaderTitleArea>
         </CustomHeader>
         <div className="flex-column">
-          <Header title={"Test"} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
-          {testItems}
-          <Header title={"ACC"} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
-          {accItems}
+          {items}
         </div>
       </Page>
     );
