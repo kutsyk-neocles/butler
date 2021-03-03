@@ -60,7 +60,17 @@ export const EpicuroServices: Array<IEpicuroService> = [
     }
 ];
 
-const getUiUri = (tenant: ITenant, env: string, domain: string) => env == 'acc' && !tenant.separateAcc ? `epicuro${tenant.name}test-${env}.${domain}` : `epicuro${tenant.name}${env}.${domain}`;
+const getUiUri = function (tenant: ITenant, env: string, domain: string) {
+    if (env == 'acc' && !tenant.separateAcc) {
+        return `epicuro${tenant.name}test-${env}.${domain}`;
+    }
+    else if (env == 'staging') {
+        return `${tenant.name}-${env}.${domain}`;
+    } else if (env == 'prod') {
+        return `${tenant.name}-${env}-primary.${domain}`;
+    }
+    else return `epicuro${tenant.name}${env}.${domain}`;
+}
 
 const getApiUri = (tenant: ITenant, env: string, domain: string) => env == 'acc' && !tenant.separateAcc ? `epicuro${tenant.name}testapi-${env}.${domain}` : `epicuro${tenant.name}${env}api.${domain}`;
 
