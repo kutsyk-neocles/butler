@@ -6,7 +6,6 @@ import * as SDK from "azure-devops-extension-sdk";
 
 import { Tenants } from "../tenants-service";
 import { Environments } from "../envs-service";
-import { VersionCard } from "../version-card/version-card"
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -18,6 +17,7 @@ import Container from "@material-ui/core/Container";
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
 import { Tab, Tabs } from "@material-ui/core";
+import VersionCard from "../version-card/version-card";
 
 const theme = createMuiTheme({
   palette: {
@@ -42,8 +42,8 @@ function TabPanel(props: any) {
       {...other}
     >
       {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
+        <Box>
+          {children}
         </Box>
       )}
     </div>
@@ -97,6 +97,7 @@ class Index extends React.Component<{}, any> {
       for (const [j, tenant] of Tenants.entries()) {
         versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env}></VersionCard>)
       }
+
       tabsPanels.push(
         <TabPanel value={this.state.value} index={i}>
           {versionItems}

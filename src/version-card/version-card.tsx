@@ -28,6 +28,22 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Switch from '@material-ui/core/Switch';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
+import AccordionActions from '@material-ui/core/AccordionActions';
+import { Button, Divider, makeStyles } from "@material-ui/core";
+import { Styles, withStyles, withTheme } from "@material-ui/styles";
+import { sentenceCase } from "sentence-case";
+
+const styles = (theme: any) => ({
+  primaryHeader: {
+    'font-size': '0.9375rem',
+    'flex-basis': '33.33%',
+    'flex-shrink': 0
+  },
+  secondaryHeader: {
+    color: '#c4c4c4',
+    'font-size': '0.9375rem'
+  }
+});
 
 export interface IEpicuroVersion {
   serviceName: string;
@@ -35,29 +51,6 @@ export interface IEpicuroVersion {
   build: string;
   commit: string;
 }
-
-const columns = [
-  { field: 'serviceName', headerName: 'Service Name', width: 130 },
-  { field: 'branch', headerName: 'Branch' },
-  { field: 'build', headerName: 'Build' },
-  { field: 'commit', headerName: 'Commit' }
-];
-
-
-
-// const commandBarItems: IHeaderCommandBarItem[] = [
-//   {
-//     important: true,
-//     id: "update",
-//     text: "Update",
-//     onActivate: () => {
-//       console.log('Hello world');
-//     },
-//     iconProps: {
-//       iconName: "Refresh"
-//     }
-//   }
-// ];
 
 async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
   let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
@@ -68,8 +61,7 @@ async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
     try {
       versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
     }
-    catch (e)
-    {
+    catch (e) {
       versionForService = {
         branch: e.message,
         build: 'Error',
@@ -90,8 +82,7 @@ async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
   try {
     versionForApi = await (await fetch(`https://${uri}/version.json`)).json();
   }
-  catch (e)
-  {
+  catch (e) {
     versionForApi = {
       branch: e.message,
       build: 'Error',
@@ -109,7 +100,7 @@ async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
   return tenantResult;
 }
 
-export class VersionCard extends React.Component<any, any> {
+class VersionCard extends React.Component<any, any> {
 
   constructor(props: any) {
     super(props);
@@ -154,6 +145,8 @@ export class VersionCard extends React.Component<any, any> {
     const tableItems: ObservableArray<IEpicuroVersion> = new ObservableArray(this.state.tenantVersions.versions);
     const tableRows = [];
 
+    const { classes } = this.props;
+
     if (tableItems) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
@@ -168,10 +161,6 @@ export class VersionCard extends React.Component<any, any> {
       }
     }
 
-    const refreshButton = <IconButton onClick={() => this.handleUpdate()}>
-      <ReplayIcon />
-    </IconButton>
-
     return (
       <div>
         <Accordion>
@@ -181,14 +170,10 @@ export class VersionCard extends React.Component<any, any> {
             aria-controls="additional-actions3-content"
             id="additional-actions3-header"
           >
-            <FormControlLabel
-              aria-label="Acknowledge"
-              onClick={(event) => event.stopPropagation()}
-              onFocus={(event) => event.stopPropagation()}
-              control={refreshButton}
-              label={`${this.props.tenant.name} - ${this.props.env}`}
-            />
+            <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)}</Typography>
+            <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
           </AccordionSummary>
+
           <AccordionDetails>
             <TableContainer>
               <Table
@@ -210,9 +195,16 @@ export class VersionCard extends React.Component<any, any> {
               </Table>
             </TableContainer>
           </AccordionDetails>
+          <Divider />
+          <AccordionActions>
+            <Button size="small" color="primary" onClick={() => this.handleUpdate()}>
+              Refresh
+          </Button>
+          </AccordionActions>
         </Accordion>
       </div>
     );
   }
-
 }
+
+export default withStyles(styles)(VersionCard);
