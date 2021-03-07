@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "version-checker",
     "publisher": "Neocles",
-    "version": "1.0.11",
+    "version": "1.0.12",
     "name": "Version Checker",
     "description": "Azure DevOps Extension",
     "public": false,

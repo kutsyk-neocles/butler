@@ -72,8 +72,18 @@ const getUiUri = function (tenant: ITenant, env: string, domain: string) {
     else return `epicuro${tenant.name}${env}.${domain}`;
 }
 
-const getApiUri = (tenant: ITenant, env: string, domain: string) => env == 'acc' && !tenant.separateAcc ? `epicuro${tenant.name}testapi-${env}.${domain}` : `epicuro${tenant.name}${env}api.${domain}`;
-
+const getApiUri = function (tenant: ITenant, env: string, domain: string) 
+{
+    if (env == 'acc' && !tenant.separateAcc) {
+        return `epicuro${tenant.name}testapi-${env}.${domain}`;
+    }
+    else if (env == 'staging') {
+        return `epicuro${tenant.name}api-${env}.${domain}`;
+    } else if (env == 'prod') {
+        return `epicuro${tenant.name}api.${domain}`;
+    }
+    else return `epicuro${tenant.name}${env}api.${domain}`;
+}
 
 export interface IVersionTableItem extends ISimpleTableCell {
     serviceName: string;

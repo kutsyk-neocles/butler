@@ -23,6 +23,26 @@ import { Environments } from "../envs-service";
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IEpicuroVersion, VersionCard } from "../version-card/version-card"
 import { DomainProd, DomainTest } from "../domains-service";
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
+import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import MenuIcon from '@material-ui/icons/Menu';
+import Box from "@material-ui/core/Box";
+import Container from "@material-ui/core/Container";
+import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: '#3d5afe'
+    },
+    secondary: {
+      main: '#1de9b6'
+    },
+  },
+});
 
 class Index extends React.Component<{}, any> {
 
@@ -51,11 +71,19 @@ class Index extends React.Component<{}, any> {
     for (const [i, env] of Environments.entries()) {
       const versionItems = [];
       for (const [j, tenant] of Tenants.entries()) {
-        versionItems.push(<VersionCard key={i+tenant.name+'-'+env+j} tenant={tenant} env={env}></VersionCard>)
+        versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env}></VersionCard>)
       }
       items.push(
         <div className="flex-grow">
-          <Header key={env+i} title={env} titleSize={TitleSize.Medium} titleIconProps={{ iconName: "ServerEnviroment" }} />
+          <ThemeProvider theme={theme}>
+            <AppBar position="static" key={env + i}>
+              <Toolbar>
+                <Typography variant="h6">
+                  {env}
+                </Typography>
+              </Toolbar>
+            </AppBar>
+          </ThemeProvider>
           {versionItems}
         </div>
       );
@@ -63,23 +91,10 @@ class Index extends React.Component<{}, any> {
 
 
     return (
-      <Page className="flex-grow">
-        <CustomHeader className="bolt-header-with-commandbar">
-          <HeaderTitleArea>
-            <HeaderTitleRow>
-              <HeaderTitle className="text-ellipsis" titleSize={TitleSize.Large}>
-                BUTLER
-              </HeaderTitle>
-            </HeaderTitleRow>
-            <HeaderDescription>
-              Multi tenant managment extension
-            </HeaderDescription>
-          </HeaderTitleArea>
-        </CustomHeader>
-        <div className="flex-column">
-          {items}
-        </div>
-      </Page>
+      <Container component="div">
+        {items}
+      </Container>
+
     );
   }
 
