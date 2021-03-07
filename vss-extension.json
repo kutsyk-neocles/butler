@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "version-checker",
     "publisher": "Neocles",
-    "version": "1.0.12",
+    "version": "1.0.16",
     "name": "Version Checker",
     "description": "Azure DevOps Extension",
     "public": false,
@@ -28,28 +28,31 @@
     },
     "contributions": [
         {
-            "id": "hello-world-hub-group",
+            "id": "butler-hub-group",
             "type": "ms.vss-web.hub-group",
-            "description": "Sample hub group",
+            "description": "Butler Hub",
             "targets": [
                 "ms.vss-web.project-hub-groups-collection"
             ],
             "properties": {
-                "name": "Butler",
+                "name": "Multi-tenant Hub",
                 "icon": {
                     "dark": "static/img/world.png",
                     "light": "static/img/world.png"
-                }
+                },
+                "supportsMobile": true
             }
         },
         {
             "id": "default-hub",
             "type": "ms.vss-web.hub",
             "targets": [
-                ".hello-world-hub-group"
+                ".butler-hub-group"
             ],
             "properties": {
-                "uri": "dist/index/index.html"
+                "name": "Versions",
+                "uri": "dist/index/index.html",
+                "supportsMobile": true
             }
         }
     ],
