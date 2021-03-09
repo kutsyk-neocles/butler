@@ -3,8 +3,8 @@ import * as SDK from "azure-devops-extension-sdk";
 
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
-import { EpicuroServices, getApiUri, getUiUri, ITenant } from "../services/tenants-service";
-import { DomainProd, DomainTest } from "../services/domains-service";
+import { EpicuroServices, getApiUri, getUiUri, ITenant } from "../tenants-service";
+import { DomainProd, DomainTest } from "../domains-service";
 import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';

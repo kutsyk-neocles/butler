@@ -1,5 +1,5 @@
 import * as azdev from "azure-devops-node-api";
-import { AzureDevOpsProjectId, OrgUrl } from "../values/azure-devops-values";
+import { AzureDevOpsProjectId, OrgUrl } from "./azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
 import * as BuildApi from "azure-devops-node-api/BuildApi";

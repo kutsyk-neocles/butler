@@ -4,8 +4,8 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as SDK from "azure-devops-extension-sdk";
 
-import { getTenantForDeploymentName, Tenants } from "../services/tenants-service";
-import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } from "../services/envs-service";
+import { getTenantForDeploymentName, Tenants } from "../tenants-service";
+import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } from "../envs-service";
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
@@ -13,12 +13,13 @@ import { Tab, Tabs } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
-import { AzureDevOpsProjectId, OrgUrl } from "../values/azure-devops-values";
+import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
 import * as BuildApi from "azure-devops-node-api/BuildApi";
 import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
-import { getTenantsReleasesForDefinition } from "../services/azure-devops-service";
+import { getTenantsReleasesForDefinition } from "../azure-devops-service";
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 
 const theme = createMuiTheme({
@@ -67,7 +68,8 @@ class Index extends React.Component<{}, any> {
     this.handleChange = this.handleChange.bind(this);
 
     this.state = {
-      value: 0
+      value: 0,
+      loading: true
     };
   }
 
@@ -87,10 +89,12 @@ class Index extends React.Component<{}, any> {
 
 
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, 'pulse-CD');
+    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
 
-    const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);    
-
+    const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
+    this.setState({
+      loading: false
+    });
     console.log(deployments);
   }
 
@@ -99,40 +103,50 @@ class Index extends React.Component<{}, any> {
   }
 
   public render(): JSX.Element {
-    const tabs = [];
-    const tabsPanels = [];
-    for (const [i, env] of Environments.entries()) {
-      const versionItems = [];
-      tabs.push(<Tab key={i + 'tab'} label={`${env}`} {...a11yProps(i)} />)
+    if (!this.state.loading) {
+      const tabs = [];
+      const tabsPanels = [];
+      for (const [i, env] of Environments.entries()) {
+        const versionItems = [];
+        tabs.push(<Tab key={i + 'tab'} label={`${env}`} {...a11yProps(i)} />)
 
-      for (const [j, tenant] of Tenants.entries()) {
-        versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} token={this.state.token}></VersionCard>)
+        for (const [j, tenant] of Tenants.entries()) {
+          versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} token={this.state.token}></VersionCard>)
+        }
+
+        tabsPanels.push(
+          <TabPanel value={this.state.value} index={i} key={i}>
+            {versionItems}
+          </TabPanel>
+        );
       }
 
-      tabsPanels.push(
-        <TabPanel value={this.state.value} index={i} key={i}>
-          {versionItems}
-        </TabPanel>
+      return (
+        <Grid
+          container
+          direction="column">
+          <AppBar position="static">
+            <Tabs value={this.state.value} onChange={this.handleChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              aria-label="envs tab">
+              {tabs}
+            </Tabs>
+          </AppBar>
+          {tabsPanels}
+        </Grid>
       );
     }
 
     return (
       <Grid
         container
+        alignItems="center"
         direction="column">
-        <AppBar position="static">
-          <Tabs value={this.state.value} onChange={this.handleChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="envs tab">
-            {tabs}
-          </Tabs>
-        </AppBar>
-        {tabsPanels}
+        <CircularProgress />
       </Grid>
     );
   }
-
 }
 
 ReactDOM.render(<Index />, document.getElementById("root"));
