@@ -4,20 +4,22 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as SDK from "azure-devops-extension-sdk";
 
-import { Tenants } from "../tenants-service";
-import { Environments } from "../envs-service";
+import { getTenantForDeploymentName, Tenants } from "../services/tenants-service";
+import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } from "../services/envs-service";
 import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
-import MenuIcon from '@material-ui/icons/Menu';
-import Box from "@material-ui/core/Box";
-import Container from "@material-ui/core/Container";
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
 import { Tab, Tabs } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
+
+import * as azdev from "azure-devops-node-api";
+import { AzureDevOpsProjectId, OrgUrl } from "../values/azure-devops-values";
+import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
+import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
+import * as BuildApi from "azure-devops-node-api/BuildApi";
+import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
+import { getTenantsReleasesForDefinition } from "../services/azure-devops-service";
+
 
 const theme = createMuiTheme({
   palette: {
@@ -42,9 +44,9 @@ function TabPanel(props: any) {
       {...other}
     >
       {value === index && (
-        <Box>
+        <div>
           {children}
-        </Box>
+        </div>
       )}
     </div>
   );
@@ -57,12 +59,11 @@ function a11yProps(index: any) {
   };
 }
 
-
 class Index extends React.Component<{}, any> {
 
   constructor(props: {}) {
     super(props);
-    this.setUserCredentials = this.setUserCredentials.bind(this);
+    this.setToken = this.setToken.bind(this);
     this.handleChange = this.handleChange.bind(this);
 
     this.state = {
@@ -78,13 +79,23 @@ class Index extends React.Component<{}, any> {
 
   public async componentDidMount() {
     await SDK.init();
-    const userName = `${SDK.getUser().displayName}`;
-    this.setUserCredentials(userName);
+    const accessToken = await SDK.getAccessToken();
+    this.setToken(accessToken);
 
+    let authHandler = azdev.getHandlerFromToken(accessToken);
+    let webApi = new azdev.WebApi(OrgUrl, authHandler);
+
+
+    const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
+    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, 'pulse-CD');
+
+    const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);    
+
+    console.log(deployments);
   }
 
-  setUserCredentials(credentials: string) {
-    this.setState({ userName: credentials });
+  setToken(credentials: string) {
+    this.setState({ token: credentials });
   }
 
   public render(): JSX.Element {
@@ -92,14 +103,14 @@ class Index extends React.Component<{}, any> {
     const tabsPanels = [];
     for (const [i, env] of Environments.entries()) {
       const versionItems = [];
-      tabs.push(<Tab label={`${env}`} {...a11yProps(i)} />)
+      tabs.push(<Tab key={i + 'tab'} label={`${env}`} {...a11yProps(i)} />)
 
       for (const [j, tenant] of Tenants.entries()) {
-        versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env}></VersionCard>)
+        versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} token={this.state.token}></VersionCard>)
       }
 
       tabsPanels.push(
-        <TabPanel value={this.state.value} index={i}>
+        <TabPanel value={this.state.value} index={i} key={i}>
           {versionItems}
         </TabPanel>
       );
@@ -110,7 +121,10 @@ class Index extends React.Component<{}, any> {
         container
         direction="column">
         <AppBar position="static">
-          <Tabs value={this.state.value} onChange={this.handleChange} aria-label="envs tab">
+          <Tabs value={this.state.value} onChange={this.handleChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            aria-label="envs tab">
             {tabs}
           </Tabs>
         </AppBar>

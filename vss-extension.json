@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "version-checker",
     "publisher": "Neocles",
-    "version": "1.0.16",
+    "version": "1.0.18",
     "name": "Version Checker",
     "description": "Azure DevOps Extension",
     "public": false,
@@ -26,6 +26,19 @@
     "icons": {
         "default": "static/img/world.png"
     },
+    "scopes": [
+        "vso.build",
+        "vso.build_execute",
+        "vso.release",
+        "vso.release_execute",
+        "vso.release_manage",
+        "vso.taskgroups_read",
+        "vso.taskgroups_write",
+        "vso.taskgroups_manage",
+        "vso.variablegroups_read",
+        "vso.variablegroups_write",
+        "vso.variablegroups_manage"
+    ],
     "contributions": [
         {
             "id": "butler-hub-group",

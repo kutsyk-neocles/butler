@@ -1,5 +1,3 @@
-import { ISimpleTableCell } from "azure-devops-ui/Table";
-
 export interface ITenant {
     name: string;
     separateAcc: boolean;
@@ -29,6 +27,10 @@ export const Tenants: Array<ITenant> = [
     },
     {
         name: 'ecco',
+        separateAcc: false
+    },
+    {
+        name: 'whitelabel',
         separateAcc: false
     }
 ];
@@ -72,8 +74,7 @@ const getUiUri = function (tenant: ITenant, env: string, domain: string) {
     else return `epicuro${tenant.name}${env}.${domain}`;
 }
 
-const getApiUri = function (tenant: ITenant, env: string, domain: string) 
-{
+const getApiUri = function (tenant: ITenant, env: string, domain: string) {
     if (env == 'acc' && !tenant.separateAcc) {
         return `epicuro${tenant.name}testapi-${env}.${domain}`;
     }
@@ -85,11 +86,15 @@ const getApiUri = function (tenant: ITenant, env: string, domain: string)
     else return `epicuro${tenant.name}${env}api.${domain}`;
 }
 
-export interface IVersionTableItem extends ISimpleTableCell {
-    serviceName: string;
-    build: string;
-    branch: string;
-    commit: string;
+export function getTenantForDeploymentName(deploymentName?: string) {
+    if (deploymentName) {
+        for (let tenant of Tenants) {
+            if (deploymentName.toLowerCase().indexOf(tenant.name) !== -1)
+                return tenant;
+        }
+        return null;
+    }
+    return null;
 }
 
 export { getUiUri, getApiUri };

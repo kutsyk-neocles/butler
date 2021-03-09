@@ -3,34 +3,22 @@ import * as SDK from "azure-devops-extension-sdk";
 
 import { ObservableArray, ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
-import { EpicuroServices, getApiUri, getUiUri, ITenant } from "../tenants-service";
-import { DomainProd, DomainTest } from "../domains-service";
+import { EpicuroServices, getApiUri, getUiUri, ITenant } from "../services/tenants-service";
+import { DomainProd, DomainTest } from "../services/domains-service";
 import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
-import Checkbox from '@material-ui/core/Checkbox';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ReplayIcon from '@material-ui/icons/Replay';
-import IconButton from "@material-ui/core/IconButton";
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Toolbar from '@material-ui/core/Toolbar';
-import Paper from '@material-ui/core/Paper';
-import Tooltip from '@material-ui/core/Tooltip';
-import Switch from '@material-ui/core/Switch';
-import DeleteIcon from '@material-ui/icons/Delete';
-import FilterListIcon from '@material-ui/icons/FilterList';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, Divider, makeStyles } from "@material-ui/core";
-import { Styles, withStyles, withTheme } from "@material-ui/styles";
+import { Button, Divider } from "@material-ui/core";
+import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
 
 const styles = (theme: any) => ({

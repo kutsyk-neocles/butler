@@ -11,6 +11,9 @@ fs.readdirSync(srcDir)
 module.exports = {
   target: "web",
   entry: entries,
+  node: {
+    fs: "empty"
+  },
   output: {
     filename: "[name]/[name].js",
   },
