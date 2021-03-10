@@ -17,9 +17,14 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, Divider } from "@material-ui/core";
+import { Button, CircularProgress, Divider } from "@material-ui/core";
 import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
+
+import * as azdev from "azure-devops-node-api";
+import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
+import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
+import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
 
 const styles = (theme: any) => ({
   primaryHeader: {
@@ -35,57 +40,55 @@ const styles = (theme: any) => ({
 
 export interface IEpicuroVersion {
   serviceName: string;
-  branch: string;
-  build: string;
-  commit: string;
+  releases: any[];
 }
 
 async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
-  let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
+  // let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
 
-  for (let service of EpicuroServices) {
-    let uri = getUiUri(tenant, env, domain);
-    let versionForService = null;
-    try {
-      versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
-    }
-    catch (e) {
-      versionForService = {
-        branch: e.message,
-        build: 'Error',
-        commit: 'Error'
-      }
-    }
-    tenantResult.versions.push({
-      serviceName: service.name,
-      branch: versionForService.branch,
-      build: versionForService.build,
-      commit: versionForService.commit
-    });
-  }
+  // for (let service of EpicuroServices) {
+  //   let uri = getUiUri(tenant, env, domain);
+  //   let versionForService = null;
+  //   try {
+  //     versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
+  //   }
+  //   catch (e) {
+  //     versionForService = {
+  //       branch: e.message,
+  //       build: 'Error',
+  //       commit: 'Error'
+  //     }
+  //   }
+  //   tenantResult.versions.push({
+  //     serviceName: service.name,
+  //     branch: versionForService.branch,
+  //     build: versionForService.build,
+  //     commit: versionForService.commit
+  //   });
+  // }
 
-  let uri = getApiUri(tenant, env, domain);
+  // let uri = getApiUri(tenant, env, domain);
 
-  let versionForApi = null;
-  try {
-    versionForApi = await (await fetch(`https://${uri}/version.json`)).json();
-  }
-  catch (e) {
-    versionForApi = {
-      branch: e.message,
-      build: 'Error',
-      commit: 'Error'
-    }
-  }
+  // let versionForApi = null;
+  // try {
+  //   versionForApi = await (await fetch(`https://${uri}/version.json`)).json();
+  // }
+  // catch (e) {
+  //   versionForApi = {
+  //     branch: e.message,
+  //     build: 'Error',
+  //     commit: 'Error'
+  //   }
+  // }
 
-  tenantResult.versions.push({
-    serviceName: 'API',
-    branch: versionForApi.branch,
-    build: versionForApi.build,
-    commit: versionForApi.commit
-  });
+  // tenantResult.versions.push({
+  //   serviceName: 'API',
+  //   branch: versionForApi.branch,
+  //   build: versionForApi.build,
+  //   commit: versionForApi.commit
+  // });
 
-  return tenantResult;
+  // return tenantResult;
 }
 
 class VersionCard extends React.Component<any, any> {
@@ -93,9 +96,10 @@ class VersionCard extends React.Component<any, any> {
   constructor(props: any) {
     super(props);
     this.handleUpdate = this.handleUpdate.bind(this);
+    this.loadData = this.loadData.bind(this);
 
     this.state = {
-      tenantVersions: {}
+      deployments: []
     };
   }
 
@@ -114,44 +118,131 @@ class VersionCard extends React.Component<any, any> {
   ]
 
   async handleUpdate() {
-    let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
+    // let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
 
-    this.setState({
-      tenantVersions: tenantVersions
-    });
+    // this.setState({
+    //   tenantVersions: tenantVersions
+    // });
   }
 
   public async componentDidMount() {
-    let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
+    // let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
 
-    this.setState({
-      tenantVersions: tenantVersions
-    });
+    // this.setState({
+    //   tenantVersions: tenantVersions
+    // });
+  }
+
+  async loadData(e: any, expanded: boolean) {
+    if (expanded && this.state.deployments.length == 0) {
+      const results = [];
+      console.log(this.props.deployments);
+
+      for (var serviceName of Object.keys(this.props.deployments)) {
+        let authHandler = azdev.getHandlerFromToken(this.props.token);
+        let webApi = new azdev.WebApi(OrgUrl, authHandler);
+        const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
+        const requestedReleases: any[] = [];
+
+        let releases = this.props.deployments[serviceName];
+        let serviceVersion = {
+          serviceName: serviceName,
+          releases: Array<any>()
+        };
+
+        for (let r of releases) {
+
+          if (!r.currentRelease.id) // release doesn't exist
+            continue;
+
+          if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
+            const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
+            serviceVersion.releases.push({
+              build: reqR.build,
+              branch: reqR.branch,
+              cluster: r.cluster
+            });
+            continue;
+          }
+
+          let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
+          let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
+          let definitionReference: any = primaryArtifact?.definitionReference;
+          console.log(releaseDetails);
+          if (definitionReference) {
+            let rel: any = {
+              build: definitionReference.version.name,
+              branch: definitionReference.branches.name,
+              cluster: r.cluster
+            };
+            serviceVersion.releases.push(rel);
+            requestedReleases.push(
+              {
+                id: r.currentRelease.id,
+                build: definitionReference.version.name,
+                branch: definitionReference.branches.name
+              });
+          }
+          results.push(serviceVersion);
+        }
+      }
+
+      this.setState({
+        deployments: results
+      });
+    }
   }
 
   public render(): JSX.Element {
-    const tableItems: ObservableArray<IEpicuroVersion> = new ObservableArray(this.state.tenantVersions.versions);
+    const tableItems: ObservableArray<IEpicuroVersion> = new ObservableArray(this.state.deployments);
     const tableRows = [];
 
     const { classes } = this.props;
+    let body = null;
 
-    if (tableItems) {
+    if (tableItems.length > 0) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
         tableRows.push(<TableRow key={i}>
           <TableCell component="th" scope="row">
             {row.serviceName}
           </TableCell>
-          <TableCell align="right">{row.branch}</TableCell>
-          <TableCell align="right">{row.build}</TableCell>
-          <TableCell align="right">{row.commit}</TableCell>
+          <TableCell align="right"><code>
+            {row.releases[0]?.branch ?? "-"}
+          </code></TableCell>
+          <TableCell align="right">
+            <code>
+              {row.releases[1]?.branch ?? "-"}
+            </code>
+          </TableCell>
         </TableRow>)
       }
+      body = (<TableContainer>
+        <Table
+          aria-labelledby="tableTitle"
+          size={'medium'}
+          aria-label="enhanced table"
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell>Service Name</TableCell>
+              <TableCell align="right">Primary</TableCell>
+              <TableCell align="right">Secondary</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {tableRows}
+          </TableBody>
+        </Table>
+      </TableContainer>);
+    }
+    else {
+      body = (<CircularProgress />);
     }
 
     return (
       <div>
-        <Accordion>
+        <Accordion onChange={this.loadData}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-label="Expand"
@@ -163,25 +254,7 @@ class VersionCard extends React.Component<any, any> {
           </AccordionSummary>
 
           <AccordionDetails>
-            <TableContainer>
-              <Table
-                aria-labelledby="tableTitle"
-                size={'medium'}
-                aria-label="enhanced table"
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Service Name</TableCell>
-                    <TableCell align="right">Branch</TableCell>
-                    <TableCell align="right">Build</TableCell>
-                    <TableCell align="right">Commit</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tableRows}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            {body}
           </AccordionDetails>
           <Divider />
           <AccordionActions>

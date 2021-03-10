@@ -14,7 +14,6 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
         const releaseDef: ReleaseInterfaces.ReleaseDefinition = releaseDefinitons[i];
         const defId: any = releaseDef.id;
         const definition = await releaseApiObject.getReleaseDefinition(AzureDevOpsProjectId, defId);
-        console.log(definition);
         const definitionName = definition.name;
 
         if (!definitionName)
@@ -23,6 +22,7 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
         if (definition.environments) {
             for (let defEnv of definition.environments) {
                 let deploymentName = defEnv.name;
+                let environemntId = defEnv.id;
 
                 if (!deploymentName)
                     continue;
@@ -35,7 +35,9 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
                         deployments[tenant.name] = {};
 
                     if (!deployments[tenant.name][env])
-                        deployments[tenant.name][env] = {};
+                        deployments[tenant.name][env] = {
+                            id: environemntId
+                        };
 
                     if (!deployments[tenant.name][env][definitionName])
                         deployments[tenant.name][env][definitionName] = [];

@@ -86,16 +86,18 @@ class Index extends React.Component<{}, any> {
 
     let authHandler = azdev.getHandlerFromToken(accessToken);
     let webApi = new azdev.WebApi(OrgUrl, authHandler);
-
-
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
+    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "-CD");
 
     const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
+    console.log(deployments);
     this.setState({
       loading: false
     });
-    console.log(deployments);
+
+    this.setState({
+      deployments: deployments
+    });
   }
 
   setToken(credentials: string) {
@@ -111,7 +113,11 @@ class Index extends React.Component<{}, any> {
         tabs.push(<Tab key={i + 'tab'} label={`${env}`} {...a11yProps(i)} />)
 
         for (const [j, tenant] of Tenants.entries()) {
-          versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} token={this.state.token}></VersionCard>)
+          let tenantEnvDeployments = null;
+          if (this.state.deployments) {
+            tenantEnvDeployments = this.state.deployments[tenant.name][env];
+          }
+          versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} deployments={tenantEnvDeployments} token={this.state.token}></VersionCard>)
         }
 
         tabsPanels.push(
@@ -144,6 +150,7 @@ class Index extends React.Component<{}, any> {
         alignItems="center"
         direction="column">
         <CircularProgress />
+        <code>Preloading releases...</code>
       </Grid>
     );
   }
