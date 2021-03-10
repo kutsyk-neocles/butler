@@ -25,6 +25,7 @@ import * as azdev from "azure-devops-node-api";
 import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
+import { getEnvironmentForReleaseAndStage, getUriForRelease } from "../azure-devops-service";
 
 const styles = (theme: any) => ({
   primaryHeader: {
@@ -41,54 +42,6 @@ const styles = (theme: any) => ({
 export interface IEpicuroVersion {
   serviceName: string;
   releases: any[];
-}
-
-async function getVersionsForEnv(tenant: ITenant, env: string, domain: string) {
-  // let tenantResult = { tenant: tenant.name, env: env, versions: new Array<IEpicuroVersion>() };
-
-  // for (let service of EpicuroServices) {
-  //   let uri = getUiUri(tenant, env, domain);
-  //   let versionForService = null;
-  //   try {
-  //     versionForService = await (await fetch(`https://${uri}${service.path}/version.json`)).json();
-  //   }
-  //   catch (e) {
-  //     versionForService = {
-  //       branch: e.message,
-  //       build: 'Error',
-  //       commit: 'Error'
-  //     }
-  //   }
-  //   tenantResult.versions.push({
-  //     serviceName: service.name,
-  //     branch: versionForService.branch,
-  //     build: versionForService.build,
-  //     commit: versionForService.commit
-  //   });
-  // }
-
-  // let uri = getApiUri(tenant, env, domain);
-
-  // let versionForApi = null;
-  // try {
-  //   versionForApi = await (await fetch(`https://${uri}/version.json`)).json();
-  // }
-  // catch (e) {
-  //   versionForApi = {
-  //     branch: e.message,
-  //     build: 'Error',
-  //     commit: 'Error'
-  //   }
-  // }
-
-  // tenantResult.versions.push({
-  //   serviceName: 'API',
-  //   branch: versionForApi.branch,
-  //   build: versionForApi.build,
-  //   commit: versionForApi.commit
-  // });
-
-  // return tenantResult;
 }
 
 class VersionCard extends React.Component<any, any> {
@@ -118,19 +71,10 @@ class VersionCard extends React.Component<any, any> {
   ]
 
   async handleUpdate() {
-    // let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
-
-    // this.setState({
-    //   tenantVersions: tenantVersions
-    // });
   }
 
   public async componentDidMount() {
-    // let tenantVersions = await getVersionsForEnv(this.props.tenant, this.props.env, this.props.env == 'test' || this.props.env == 'acc' ? DomainTest : DomainProd);
 
-    // this.setState({
-    //   tenantVersions: tenantVersions
-    // });
   }
 
   async loadData(e: any, expanded: boolean) {
@@ -160,7 +104,9 @@ class VersionCard extends React.Component<any, any> {
             serviceVersion.releases.push({
               build: reqR.build,
               branch: reqR.branch,
-              cluster: r.cluster
+              cluster: r.cluster,
+              releaseId: reqR.releaseId,
+              envId: reqR.envId
             });
             continue;
           }
@@ -168,19 +114,25 @@ class VersionCard extends React.Component<any, any> {
           let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
           let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
           let definitionReference: any = primaryArtifact?.definitionReference;
-          console.log(releaseDetails);
+          let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
+
           if (definitionReference) {
             let rel: any = {
               build: definitionReference.version.name,
               branch: definitionReference.branches.name,
-              cluster: r.cluster
+              cluster: r.cluster,
+              releaseId: r.currentRelease.id,
+              envId: envId
             };
+
             serviceVersion.releases.push(rel);
             requestedReleases.push(
               {
                 id: r.currentRelease.id,
                 build: definitionReference.version.name,
-                branch: definitionReference.branches.name
+                branch: definitionReference.branches.name,
+                releaseId: r.currentRelease.id,
+                envId: envId
               });
           }
           results.push(serviceVersion);
@@ -203,16 +155,17 @@ class VersionCard extends React.Component<any, any> {
     if (tableItems.length > 0) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
+        
         tableRows.push(<TableRow key={i}>
           <TableCell component="th" scope="row">
             {row.serviceName}
           </TableCell>
           <TableCell align="right"><code>
-            {row.releases[0]?.branch ?? "-"}
+            <a href={row.releases[0] ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "-"}>{row.releases[1]?.branch}</a>
           </code></TableCell>
           <TableCell align="right">
             <code>
-              {row.releases[1]?.branch ?? "-"}
+              <a href={row.releases[1] ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "-"}>{row.releases[1]?.branch}</a>
             </code>
           </TableCell>
         </TableRow>)

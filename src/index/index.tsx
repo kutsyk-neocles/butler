@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Tab, Tabs } from "@material-ui/core";
+import { Tab, Tabs, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
@@ -90,7 +90,7 @@ class Index extends React.Component<{}, any> {
     const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "-CD");
 
     const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
-    console.log(deployments);
+    
     this.setState({
       loading: false
     });
@@ -150,7 +150,7 @@ class Index extends React.Component<{}, any> {
         alignItems="center"
         direction="column">
         <CircularProgress />
-        <code>Preloading releases...</code>
+        <Typography>Preloading releases...</Typography>
       </Grid>
     );
   }

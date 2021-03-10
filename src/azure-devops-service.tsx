@@ -1,11 +1,26 @@
-import * as azdev from "azure-devops-node-api";
 import { AzureDevOpsProjectId, OrgUrl } from "./azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
-import * as BuildApi from "azure-devops-node-api/BuildApi";
-import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
 import { getTenantForDeploymentName } from "./tenants-service";
 import { getClusterForDeploymentName, getEnvForDeploymentName } from "./envs-service";
+
+export function getEnvironmentForReleaseAndStage(releaseDetails: ReleaseInterfaces.Release, tenant: string, env: string, cluster: string)
+{
+    if (releaseDetails && releaseDetails.environments)
+    {
+        let releaseEnv: any  = null;
+        console.log(releaseDetails.environments);
+        if (cluster == 'secondary')
+        {
+            releaseEnv = releaseDetails.environments.find(e => e.name?.toLowerCase().includes(tenant) && e.name?.toLowerCase().includes(env) && e.name.toLowerCase().includes(cluster));
+        }
+        else{
+            releaseEnv = releaseDetails.environments.find(e => e.name?.toLowerCase().includes(tenant) && e.name?.toLowerCase().includes(env) && !e.name.toLowerCase().includes('secondary'));
+        }
+        return releaseEnv?.id ?? null;
+    }
+    return null;
+}
 
 export async function getTenantsReleasesForDefinition(releaseDefinitons: ReleaseInterfaces.ReleaseDefinition[], releaseApiObject: ReleaseApi.IReleaseApi) {
     const deployments: any = {};
@@ -35,15 +50,14 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
                         deployments[tenant.name] = {};
 
                     if (!deployments[tenant.name][env])
-                        deployments[tenant.name][env] = {
-                            id: environemntId
-                        };
+                        deployments[tenant.name][env] = {};
 
                     if (!deployments[tenant.name][env][definitionName])
                         deployments[tenant.name][env][definitionName] = [];
 
                     deployments[tenant.name][env][definitionName].push({
                         currentRelease: defEnv.currentRelease,
+                        envId: environemntId,
                         cluster: getClusterForDeploymentName(deploymentName)
                     });
                 }
@@ -52,4 +66,10 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
         }
     }
     return deployments;
+}
+
+export function getUriForRelease(releaseId: number, envId?: number) {
+    if (envId)
+        return `${OrgUrl}/${AzureDevOpsProjectId}/_releaseProgress?_a=release-environment-logs&releaseId=${releaseId}&environmentId=${envId}`;
+    return `${OrgUrl}/${AzureDevOpsProjectId}/_releaseProgress?releaseId=${releaseId}&_a=release-pipeline-progress`;
 }
