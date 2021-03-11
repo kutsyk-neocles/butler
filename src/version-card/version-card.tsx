@@ -17,7 +17,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, CircularProgress, Divider, Grid } from "@material-ui/core";
+import { Button, CircularProgress, Divider, Grid, Link } from "@material-ui/core";
 import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
 
@@ -161,11 +161,11 @@ class VersionCard extends React.Component<any, any> {
             {row.serviceName}
           </TableCell>
           <TableCell align="right"><code>
-            <a href={row.releases[0] ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "-"}>{row.releases[1]?.branch}</a>
+            <Link href={row.releases[0] ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "-"}>{row.releases[1]?.branch}</Link>
           </code></TableCell>
           <TableCell align="right">
             <code>
-              <a href={row.releases[1] ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "-"}>{row.releases[1]?.branch}</a>
+              <Link href={row.releases[1] ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "-"}>{row.releases[1]?.branch}</Link>
             </code>
           </TableCell>
         </TableRow>)
