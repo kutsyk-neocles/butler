@@ -17,7 +17,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, CircularProgress, Divider } from "@material-ui/core";
+import { Button, CircularProgress, Divider, Grid } from "@material-ui/core";
 import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
 
@@ -26,6 +26,7 @@ import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
 import { getEnvironmentForReleaseAndStage, getUriForRelease } from "../azure-devops-service";
+import { DataGrid } from "@material-ui/data-grid";
 
 const styles = (theme: any) => ({
   primaryHeader: {
@@ -38,6 +39,12 @@ const styles = (theme: any) => ({
     'font-size': '0.9375rem'
   }
 });
+
+const columns = [
+  { field: 'serviceName', headerName: 'ServiceName', width: 70 },
+  { field: 'primary', headerName: 'Primary', width: 130 },
+  { field: 'secondary', headerName: 'Secondary', width: 130 }
+];
 
 export interface IEpicuroVersion {
   serviceName: string;
@@ -79,15 +86,20 @@ class VersionCard extends React.Component<any, any> {
 
   async loadData(e: any, expanded: boolean) {
     if (expanded && this.state.deployments.length == 0) {
+      const authHandler = azdev.getHandlerFromToken(this.props.token);
+      const webApi = new azdev.WebApi(OrgUrl, authHandler);
+      const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
       const results = [];
-      console.log(this.props.deployments);
+
+      this.setState({
+        deployments: []
+      });
 
       for (var serviceName of Object.keys(this.props.deployments)) {
-        let authHandler = azdev.getHandlerFromToken(this.props.token);
-        let webApi = new azdev.WebApi(OrgUrl, authHandler);
-        const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
         const requestedReleases: any[] = [];
-
+        this.setState({
+          loadingServiceName: serviceName
+        });
         let releases = this.props.deployments[serviceName];
         let serviceVersion = {
           serviceName: serviceName,
@@ -101,13 +113,8 @@ class VersionCard extends React.Component<any, any> {
 
           if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
             const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
-            serviceVersion.releases.push({
-              build: reqR.build,
-              branch: reqR.branch,
-              cluster: r.cluster,
-              releaseId: reqR.releaseId,
-              envId: reqR.envId
-            });
+            reqR.cluster = r.cluster;
+            serviceVersion.releases.push(reqR);
             continue;
           }
 
@@ -126,17 +133,11 @@ class VersionCard extends React.Component<any, any> {
             };
 
             serviceVersion.releases.push(rel);
-            requestedReleases.push(
-              {
-                id: r.currentRelease.id,
-                build: definitionReference.version.name,
-                branch: definitionReference.branches.name,
-                releaseId: r.currentRelease.id,
-                envId: envId
-              });
+            requestedReleases.push(rel);
           }
-          results.push(serviceVersion);
         }
+
+        results.push(serviceVersion);
       }
 
       this.setState({
@@ -148,14 +149,13 @@ class VersionCard extends React.Component<any, any> {
   public render(): JSX.Element {
     const tableItems: ObservableArray<IEpicuroVersion> = new ObservableArray(this.state.deployments);
     const tableRows = [];
-
     const { classes } = this.props;
     let body = null;
 
     if (tableItems.length > 0) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
-        
+
         tableRows.push(<TableRow key={i}>
           <TableCell component="th" scope="row">
             {row.serviceName}
@@ -170,6 +170,7 @@ class VersionCard extends React.Component<any, any> {
           </TableCell>
         </TableRow>)
       }
+
       body = (<TableContainer>
         <Table
           aria-labelledby="tableTitle"
@@ -190,7 +191,15 @@ class VersionCard extends React.Component<any, any> {
       </TableContainer>);
     }
     else {
-      body = (<CircularProgress />);
+      body = (
+        <Grid
+          container
+          alignItems="center"
+          direction="column">
+          <CircularProgress />
+          <Typography>Loading release <code>{this.state.loadingServiceName}</code> ...</Typography>
+        </Grid>
+      );
     }
 
     return (

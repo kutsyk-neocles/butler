@@ -9,7 +9,6 @@ export function getEnvironmentForReleaseAndStage(releaseDetails: ReleaseInterfac
     if (releaseDetails && releaseDetails.environments)
     {
         let releaseEnv: any  = null;
-        console.log(releaseDetails.environments);
         if (cluster == 'secondary')
         {
             releaseEnv = releaseDetails.environments.find(e => e.name?.toLowerCase().includes(tenant) && e.name?.toLowerCase().includes(env) && e.name.toLowerCase().includes(cluster));

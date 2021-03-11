@@ -150,8 +150,8 @@ class Index extends React.Component<{}, any> {
         alignItems="center"
         direction="column">
         <CircularProgress />
-        <Typography>Preloading releases...</Typography>
-      </Grid>
+        <Typography>Preloading tenants and environments...</Typography>
+      </Grid> 
     );
   }
 }
