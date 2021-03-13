@@ -17,7 +17,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, CircularProgress, Divider, Grid, Link } from "@material-ui/core";
+import { Button, CircularProgress, Divider, Grid, Link, Paper } from "@material-ui/core";
 import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
 
@@ -192,26 +192,28 @@ class VersionCard extends React.Component<any, any> {
         </TableRow>)
       }
 
-      body = (<TableContainer>
-        <Table
-          aria-labelledby="tableTitle"
-          size={'medium'}
-          aria-label="enhanced table"
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell style={{ width: 120 }}>Service Name</TableCell>
-              <TableCell style={{ width: 80 }}>Artifact</TableCell>
-              <TableCell style={{ width: 80 }}>Branch</TableCell>
-              <TableCell style={{ width: 120 }}>Primary</TableCell>
-              <TableCell style={{ width: 120 }}>Secondary</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tableRows}
-          </TableBody>
-        </Table>
-      </TableContainer>);
+      body = (
+        <TableContainer component={Paper}>
+          <Table
+            aria-labelledby="tableTitle"
+            size={'medium'}
+            aria-label="enhanced table"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell style={{ width: 120 }}>Service Name</TableCell>
+                <TableCell style={{ width: 80 }}>Artifact</TableCell>
+                <TableCell style={{ width: 80 }}>Branch</TableCell>
+                <TableCell style={{ width: 120 }}>Primary</TableCell>
+                <TableCell style={{ width: 120 }}>Secondary</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tableRows}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      );
     }
     else {
       body = (
@@ -226,29 +228,27 @@ class VersionCard extends React.Component<any, any> {
     }
 
     return (
-      <div>
-        <Accordion onChange={this.loadData}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-label="Expand"
-            aria-controls="additional-actions3-content"
-            id="additional-actions3-header"
-          >
-            <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)}</Typography>
-            <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
-          </AccordionSummary>
+      <Accordion onChange={this.loadData}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-label="Expand"
+          aria-controls="additional-actions3-content"
+          id="additional-actions3-header"
+        >
+          <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)}</Typography>
+          <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
+        </AccordionSummary>
 
-          <AccordionDetails>
-            {body}
-          </AccordionDetails>
-          <Divider />
-          <AccordionActions>
-            <Button size="small" color="primary" onClick={() => this.handleUpdate()}>
-              Refresh
+        <AccordionDetails>
+          {body}
+        </AccordionDetails>
+        <Divider />
+        {/* <AccordionActions>
+          <Button size="small" color="primary" onClick={() => this.handleUpdate()}>
+            Refresh
           </Button>
-          </AccordionActions>
-        </Accordion>
-      </div>
+        </AccordionActions> */}
+      </Accordion>
     );
   }
 }

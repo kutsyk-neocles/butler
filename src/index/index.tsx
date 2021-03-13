@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Tab, Tabs, Typography } from "@material-ui/core";
+import { Paper, Tab, Tabs, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
@@ -90,7 +90,7 @@ class Index extends React.Component<{}, any> {
     const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "accounts-api-CD");
 
     const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
-    
+
     this.setState({
       loading: false
     });
@@ -128,19 +128,17 @@ class Index extends React.Component<{}, any> {
       }
 
       return (
-        <Grid
-          container
-          direction="column">
+        <div style={{width: "100%"}}>
           <AppBar position="static">
             <Tabs value={this.state.value} onChange={this.handleChange}
               variant="scrollable"
               scrollButtons="auto"
               aria-label="envs tab">
-              {tabs}
+                {tabs}
             </Tabs>
           </AppBar>
           {tabsPanels}
-        </Grid>
+        </div> 
       );
     }
 
@@ -151,7 +149,7 @@ class Index extends React.Component<{}, any> {
         direction="column">
         <CircularProgress />
         <Typography>Preloading tenants and environments...</Typography>
-      </Grid> 
+      </Grid>
     );
   }
 }
