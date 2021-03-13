@@ -72,3 +72,7 @@ export function getUriForRelease(releaseId: number, envId?: number) {
         return `${OrgUrl}/${AzureDevOpsProjectId}/_releaseProgress?_a=release-environment-logs&releaseId=${releaseId}&environmentId=${envId}`;
     return `${OrgUrl}/${AzureDevOpsProjectId}/_releaseProgress?releaseId=${releaseId}&_a=release-pipeline-progress`;
 }
+
+export function getUriForBuildId(buildId: string) {
+    return `https://epicuro.visualstudio.com/epicuro/_build/results?buildId=${buildId}&view=results`;
+}

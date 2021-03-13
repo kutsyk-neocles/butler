@@ -87,7 +87,7 @@ class Index extends React.Component<{}, any> {
     let authHandler = azdev.getHandlerFromToken(accessToken);
     let webApi = new azdev.WebApi(OrgUrl, authHandler);
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "-CD");
+    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "accounts-api-CD");
 
     const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
     

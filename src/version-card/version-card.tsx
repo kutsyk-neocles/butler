@@ -25,7 +25,7 @@ import * as azdev from "azure-devops-node-api";
 import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
-import { getEnvironmentForReleaseAndStage, getUriForRelease } from "../azure-devops-service";
+import { getEnvironmentForReleaseAndStage, getUriForBuildId, getUriForRelease } from "../azure-devops-service";
 import { DataGrid } from "@material-ui/data-grid";
 
 const styles = (theme: any) => ({
@@ -125,8 +125,8 @@ class VersionCard extends React.Component<any, any> {
 
           if (definitionReference) {
             let rel: any = {
-              build: definitionReference.version.name,
-              branch: definitionReference.branches.name,
+              definitionReference: definitionReference,
+              releaseName: releaseDetails.name,
               cluster: r.cluster,
               releaseId: r.currentRelease.id,
               envId: envId
@@ -155,18 +155,39 @@ class VersionCard extends React.Component<any, any> {
     if (tableItems.length > 0) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
+        let linkPrimary = null;
+        let branch = <Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>;
+
+        if (row.releases[0]) {
+          linkPrimary = (
+            <Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
+          );
+
+        }
+        let linkSecondary = null;
+        if (row.releases[1]) {
+          linkSecondary = (
+            <Link href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
+          );
+        }
+
+        let defRef = row.releases[0].definitionReference;
 
         tableRows.push(<TableRow key={i}>
-          <TableCell component="th" scope="row">
+          <TableCell>
             {row.serviceName}
           </TableCell>
-          <TableCell align="right"><code>
-            <Link href={row.releases[0] ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "-"}>{row.releases[1]?.branch}</Link>
-          </code></TableCell>
-          <TableCell align="right">
-            <code>
-              <Link href={row.releases[1] ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "-"}>{row.releases[1]?.branch}</Link>
-            </code>
+          <TableCell>
+            <Link href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>
+          </TableCell>
+          <TableCell>
+            {branch}
+          </TableCell>
+          <TableCell>
+            {linkPrimary}
+          </TableCell>
+          <TableCell>
+            {linkSecondary}
           </TableCell>
         </TableRow>)
       }
@@ -179,9 +200,11 @@ class VersionCard extends React.Component<any, any> {
         >
           <TableHead>
             <TableRow>
-              <TableCell>Service Name</TableCell>
-              <TableCell align="right">Primary</TableCell>
-              <TableCell align="right">Secondary</TableCell>
+              <TableCell style={{ width: 120 }}>Service Name</TableCell>
+              <TableCell style={{ width: 80 }}>Artifact</TableCell>
+              <TableCell style={{ width: 80 }}>Branch</TableCell>
+              <TableCell style={{ width: 120 }}>Primary</TableCell>
+              <TableCell style={{ width: 120 }}>Secondary</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
