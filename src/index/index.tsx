@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Paper, Tab, Tabs, Typography } from "@material-ui/core";
+import { Chip, FormControl, Input, InputLabel, MenuItem, Paper, Select, Tab, Tabs, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
@@ -20,7 +20,6 @@ import * as BuildApi from "azure-devops-node-api/BuildApi";
 import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
 import { getTenantsReleasesForDefinition } from "../azure-devops-service";
 import CircularProgress from '@material-ui/core/CircularProgress';
-
 
 const theme = createMuiTheme({
   palette: {
@@ -60,20 +59,67 @@ function a11yProps(index: any) {
   };
 }
 
+const names = [
+  'Oliver Hansen',
+  'Van Henry',
+  'April Tucker',
+  'Ralph Hubbard',
+  'Omar Alexander',
+  'Carlos Abbott',
+  'Miriam Wagner',
+  'Bradley Wilkerson',
+  'Virginia Andrews',
+  'Kelly Snyder',
+];
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
 class Index extends React.Component<{}, any> {
 
   constructor(props: {}) {
     super(props);
     this.setToken = this.setToken.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.handleTabChange = this.handleTabChange.bind(this);
 
     this.state = {
       value: 0,
-      loading: true
+      loading: true,
+      personName: []
     };
   }
 
-  handleChange(event: any, value: any) {
+  handleChange = (event: any) => {
+    this.setState({
+      personName: event.target.value
+    });
+  };
+
+  handleChangeMultiple = (event: any) => {
+    const { options } = event.target;
+    const value = [];
+    for (let i = 0, l = options.length; i < l; i += 1) {
+      if (options[i].selected) {
+        value.push(options[i].value);
+      }
+    }
+
+    this.setState({
+      personName: value
+    });
+  };
+
+
+  handleTabChange(event: any, value: any) {
     this.setState({
       value: value
     });
@@ -87,7 +133,7 @@ class Index extends React.Component<{}, any> {
     let authHandler = azdev.getHandlerFromToken(accessToken);
     let webApi = new azdev.WebApi(OrgUrl, authHandler);
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "accounts-api-CD");
+    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "-CD");
 
     const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
 
@@ -128,17 +174,42 @@ class Index extends React.Component<{}, any> {
       }
 
       return (
-        <div style={{width: "100%"}}>
+        <div style={{ width: "100%" }}>
+          <FormControl>
+            <InputLabel id="demo-mutiple-chip-label">Chip</InputLabel>
+            <Select
+              labelId="demo-mutiple-chip-label"
+              id="demo-mutiple-chip"
+              multiple
+              value={this.state.personName}
+              onChange={this.handleChange}
+              input={<Input id="select-multiple-chip" />}
+              renderValue={(selected: any) => (
+                <div>
+                  {selected.map((value: any) => (
+                    <Chip key={value} label={value} />
+                  ))}
+                </div>
+              )}
+              MenuProps={MenuProps}
+            >
+              {names.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <AppBar position="static">
-            <Tabs value={this.state.value} onChange={this.handleChange}
+            <Tabs value={this.state.value} onChange={this.handleTabChange}
               variant="scrollable"
               scrollButtons="auto"
               aria-label="envs tab">
-                {tabs}
+              {tabs}
             </Tabs>
           </AppBar>
           {tabsPanels}
-        </div> 
+        </div>
       );
     }
 
