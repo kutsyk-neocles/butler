@@ -50,6 +50,8 @@ export interface IEpicuroVersion {
   releases: any[];
 }
 
+const EMPTY_CELL = (<span>-</span>);
+
 class VersionCard extends React.Component<any, any> {
 
   constructor(props: any) {
@@ -159,8 +161,8 @@ class VersionCard extends React.Component<any, any> {
     if (tableItems.length > 0) {
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
-        let linkPrimary = (<span>"-"</span>);
-        let branch = (<span>"-"</span>);
+        let linkPrimary = EMPTY_CELL;
+        let branch = EMPTY_CELL;
 
         if (!row.releases[0])
           continue;
@@ -168,14 +170,14 @@ class VersionCard extends React.Component<any, any> {
         if (row.releases[0]) {
           branch = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
           linkPrimary = (
-            <Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
+            <Link target="_blank" href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
           );
         }
 
-        let linkSecondary = (<span>"-"</span>);
+        let linkSecondary = EMPTY_CELL;
         if (row.releases[1]) {
           linkSecondary = (
-            <Link href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
+            <Link target="_blank" href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
           );
         }
 
@@ -183,7 +185,7 @@ class VersionCard extends React.Component<any, any> {
         let link = null;
 
         if (row.releases[0] && defRef) {
-          link = (<Link href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>);
+          link = (<Link target="_blank" href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>);
         }
         else {
           link = ("-");
