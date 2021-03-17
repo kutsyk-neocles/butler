@@ -16,22 +16,10 @@ import * as azdev from "azure-devops-node-api";
 import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
 import * as ReleaseApi from 'azure-devops-node-api/ReleaseApi';
 import * as ReleaseInterfaces from 'azure-devops-node-api/interfaces/ReleaseInterfaces';
-import * as BuildApi from "azure-devops-node-api/BuildApi";
-import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
 import { getTenantsReleasesForDefinition } from "../azure-devops-service";
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Autocomplete } from "@material-ui/lab";
-
-const theme = createMuiTheme({
-  palette: {
-    primary: {
-      main: '#3d5afe'
-    },
-    secondary: {
-      main: '#1de9b6'
-    },
-  },
-});
+import * as _ from "lodash";
 
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
@@ -96,17 +84,17 @@ class Index extends React.Component<{}, any> {
 
 
     if (this.state.releaseApiObject) {
-      let deployments = [];
+      let processedDeployments = {};
+      let deployments = {};
       for (let r of releaseNames) {
-        console.log(r);
-        //     const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r);
-        //     console.log(releaseAzure);
-        //     //     const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
-        //     //     deployments.push(deployment);
+        const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r);
+        const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
+        deployments = _.merge(processedDeployments, deployment);
       }
-      //   //   this.setState({
-      //   //     deployments: deployments
-      //   //   });
+      
+      this.setState({
+        deployments: deployments
+      });
     }
   };
 

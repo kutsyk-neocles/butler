@@ -39,11 +39,57 @@ const styles = (theme: any) => ({
   }
 });
 
-const columns = [
-  { field: 'serviceName', headerName: 'ServiceName', width: 70 },
-  { field: 'primary', headerName: 'Primary', width: 130 },
-  { field: 'secondary', headerName: 'Secondary', width: 130 }
-];
+
+function getTableRow(tableItemsValue: any, i: number) {
+  const row = tableItemsValue;
+  let linkPrimary = EMPTY_CELL;
+  let branch = EMPTY_CELL;
+
+  if (!row.releases[0])
+    return null;
+
+  if (row.releases[0]) {
+    branch = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
+    linkPrimary = (
+      <Link target="_blank" href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
+    );
+  }
+
+  let linkSecondary = EMPTY_CELL;
+  if (row.releases[1]) {
+    linkSecondary = (
+      <Link target="_blank" href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
+    );
+  }
+
+  let defRef = row.releases[0].definitionReference;
+  let link = null;
+
+  if (row.releases[0] && defRef) {
+    link = (<Link target="_blank" href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>);
+  }
+  else {
+    link = ("-");
+  }
+
+  return (<TableRow key={i}>
+    <TableCell>
+      {row.serviceName}
+    </TableCell>
+    <TableCell>
+      {link}
+    </TableCell>
+    <TableCell>
+      {branch}
+    </TableCell>
+    <TableCell>
+      {linkPrimary}
+    </TableCell>
+    <TableCell>
+      {linkSecondary}
+    </TableCell>
+  </TableRow>);
+}
 
 export interface IEpicuroVersion {
   serviceName: string;
@@ -58,6 +104,7 @@ class VersionCard extends React.Component<any, any> {
     super(props);
     this.handleUpdate = this.handleUpdate.bind(this);
     this.loadData = this.loadData.bind(this);
+    this.getReleasesDetails = this.getReleasesDetails.bind(this);
 
     this.state = {
       deployments: []
@@ -85,69 +132,73 @@ class VersionCard extends React.Component<any, any> {
 
   }
 
+  async getReleasesDetails(releaseApiObject: any) {
+    const results = [];
+    for (var serviceName of Object.keys(this.props.deployments)) {
+      this.setState({
+        loadingServiceName: serviceName
+      });
+
+      let releases = this.props.deployments[serviceName];
+      let serviceVersion = {
+        serviceName: serviceName,
+        releases: Array<any>()
+      };
+
+      const requestedReleases: any[] = [];
+      for (let r of releases) {
+
+        if (!r.currentRelease.id) // release doesn't exist
+          continue;
+
+        if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
+          const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
+          reqR.cluster = r.cluster;
+          serviceVersion.releases.push(reqR);
+          continue;
+        }
+
+        let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
+        let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
+
+        if (primaryArtifact == null)
+          continue;
+
+        let definitionReference: any = primaryArtifact.definitionReference;
+        let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
+
+        if (definitionReference != null) {
+          let rel: any = {
+            definitionReference: definitionReference,
+            releaseName: releaseDetails.name,
+            cluster: r.cluster,
+            releaseId: r.currentRelease.id,
+            envId: envId
+          };
+
+          serviceVersion.releases.push(rel);
+          requestedReleases.push(rel);
+        }
+
+      }
+      results.push(serviceVersion);
+    }
+
+    return results;
+  }
+
   async loadData(e: any, expanded: boolean) {
-    if (expanded && this.state.deployments.length == 0) {
+    if (expanded && this.props.deployments && this.state.deployments.length != this.props.deployments.length) {
       const authHandler = azdev.getHandlerFromToken(this.props.token);
       const webApi = new azdev.WebApi(OrgUrl, authHandler);
       const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-      const results = [];
 
       this.setState({
         deployments: []
       });
-      
+
       if (this.props.deployments) {
-
-        for (var serviceName of Object.keys(this.props.deployments)) {
-          this.setState({
-            loadingServiceName: serviceName
-          });
-
-          let releases = this.props.deployments[serviceName];
-          let serviceVersion = {
-            serviceName: serviceName,
-            releases: Array<any>()
-          };
-
-          const requestedReleases: any[] = [];
-          for (let r of releases) {
-
-            if (!r.currentRelease.id) // release doesn't exist
-              continue;
-
-            if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
-              const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
-              reqR.cluster = r.cluster;
-              serviceVersion.releases.push(reqR);
-              continue;
-            }
-
-            let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
-            let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
-
-            if (primaryArtifact == null)
-              continue;
-
-            let definitionReference: any = primaryArtifact.definitionReference;
-            let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
-
-            if (definitionReference != null) {
-              let rel: any = {
-                definitionReference: definitionReference,
-                releaseName: releaseDetails.name,
-                cluster: r.cluster,
-                releaseId: r.currentRelease.id,
-                envId: envId
-              };
-
-              serviceVersion.releases.push(rel);
-              requestedReleases.push(rel);
-            }
-
-          }
-
-          results.push(serviceVersion);
-        }
+        let results = await this.getReleasesDetails(releaseApiObject);
 
         this.setState({
           deployments: results
@@ -166,54 +217,10 @@ class VersionCard extends React.Component<any, any> {
     if (tableItems.length > 0) {
 
       for (let i = 0; i < tableItems.length; i++) {
-        const row = tableItems.value[i];
-        let linkPrimary = EMPTY_CELL;
-        let branch = EMPTY_CELL;
-
-        if (!row.releases[0])
-          continue;
-
-        if (row.releases[0]) {
-          branch = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
-          linkPrimary = (
-            <Link target="_blank" href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
-          );
+        const row = getTableRow(tableItems.value[i], i);
+        if (row) {
+          tableRows.push(row);
         }
-
-        let linkSecondary = EMPTY_CELL;
-        if (row.releases[1]) {
-          linkSecondary = (
-            <Link target="_blank" href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
-          );
-        }
-
-        let defRef = row.releases[0].definitionReference;
-        let link = null;
-
-        if (row.releases[0] && defRef) {
-          link = (<Link target="_blank" href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>);
-        }
-        else {
-          link = ("-");
-        }
-
-        tableRows.push(<TableRow key={i}>
-          <TableCell>
-            {row.serviceName}
-          </TableCell>
-          <TableCell>
-            {link}
-          </TableCell>
-          <TableCell>
-            {branch}
-          </TableCell>
-          <TableCell>
-            {linkPrimary}
-          </TableCell>
-          <TableCell>
-            {linkSecondary}
-          </TableCell>
-        </TableRow>)
       }
 
       body = (
@@ -240,6 +247,7 @@ class VersionCard extends React.Component<any, any> {
       );
     }
     else {
+      // No Releases or results
       if (this.props.deployments) {
         body = (
           <Grid
