@@ -20,6 +20,11 @@ import { getTenantsReleasesForDefinition } from "../azure-devops-service";
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Autocomplete } from "@material-ui/lab";
 import * as _ from "lodash";
+import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@material-ui/icons/CheckBox';
+
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
 
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
@@ -76,18 +81,16 @@ class Index extends React.Component<{}, any> {
   }
 
   handleChange = async (event: any, value: any) => {
-    console.log(value);
-    let releaseNames = value;
+    let releases = value;
     this.setState({
-      chosenReleases: releaseNames
+      chosenReleases: releases
     });
-
-
+    
     if (this.state.releaseApiObject) {
       let processedDeployments = {};
       let deployments = {};
-      for (let r of releaseNames) {
-        const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r);
+      for (let r of releases) {
+        const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r.name);
         const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
         deployments = _.merge(processedDeployments, deployment);
       }
@@ -96,22 +99,8 @@ class Index extends React.Component<{}, any> {
         deployments: deployments
       });
     }
+    
   };
-
-  handleChangeMultiple = (event: any) => {
-    const { options } = event.target;
-    const value = [];
-    for (let i = 0, l = options.length; i < l; i += 1) {
-      if (options[i].selected) {
-        value.push(options[i].value);
-      }
-    }
-
-    this.setState({
-      chosenReleases: value
-    });
-  };
-
 
   handleTabChange(event: any, value: any) {
     this.setState({
@@ -135,7 +124,10 @@ class Index extends React.Component<{}, any> {
     const allReleases: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
     let releasesNames = [];
     for (let release of allReleases) {
-      releasesNames.push(release.name);
+      releasesNames.push({
+       name: release.name,
+       path: release?.path?.substring(1) ?? ''
+      });
     }
 
     this.setState({
@@ -175,13 +167,27 @@ class Index extends React.Component<{}, any> {
         <div style={{ width: "100%" }}>
           <Paper variant="outlined">
             <Grid container spacing={1}>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={12} sm={6} md={6}>
                 <Autocomplete
                   multiple
-                  id="tags-outlined"
-                  options={this.state.releasesNames}
+                  id="releases-select"
+                  groupBy={(option) => option.path}
+                  disableCloseOnSelect
+                  options={this.state.releasesNames.sort((a: any, b: any) => -b.path.localeCompare(a.path))}
+                  getOptionLabel={(option) => option.name}
                   onChange={this.handleChange}
                   filterSelectedOptions
+                  renderOption={(option, { selected }) => (
+                    <React.Fragment>
+                      <Checkbox
+                        icon={icon}
+                        checkedIcon={checkedIcon}
+                        style={{ marginRight: 8 }}
+                        checked={selected}
+                      />
+                      {option.name}
+                    </React.Fragment>
+                  )}
                   renderInput={(params) => (
                     <TextField
                       {...params}
