@@ -158,7 +158,7 @@ class Index extends React.Component<{}, any> {
 
         for (const [j, tenant] of Tenants.entries()) {
           let tenantEnvDeployments = null;
-          if (this.state.deployments) {
+          if (this.state.deployments && this.state.deployments[tenant.name] && this.state.deployments[tenant.name]) {
             tenantEnvDeployments = this.state.deployments[tenant.name][env];
           }
           versionItems.push(<VersionCard key={i + tenant.name + '-' + env + j} tenant={tenant} env={env} deployments={tenantEnvDeployments} token={this.state.token}></VersionCard>)
