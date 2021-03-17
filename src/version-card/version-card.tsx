@@ -95,60 +95,65 @@ class VersionCard extends React.Component<any, any> {
       this.setState({
         deployments: []
       });
+      
+      if (this.props.deployments) {
 
-      for (var serviceName of Object.keys(this.props.deployments)) {
-        const requestedReleases: any[] = [];
-        this.setState({
-          loadingServiceName: serviceName
-        });
-        let releases = this.props.deployments[serviceName];
-        let serviceVersion = {
-          serviceName: serviceName,
-          releases: Array<any>()
-        };
+        for (var serviceName of Object.keys(this.props.deployments)) {
+          this.setState({
+            loadingServiceName: serviceName
+          });
 
-        for (let r of releases) {
+          let releases = this.props.deployments[serviceName];
+          let serviceVersion = {
+            serviceName: serviceName,
+            releases: Array<any>()
+          };
 
-          if (!r.currentRelease.id) // release doesn't exist
-            continue;
+          const requestedReleases: any[] = [];
+          for (let r of releases) {
 
-          if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
-            const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
-            reqR.cluster = r.cluster;
-            serviceVersion.releases.push(reqR);
-            continue;
+            if (!r.currentRelease.id) // release doesn't exist
+              continue;
+
+            if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
+              const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
+              reqR.cluster = r.cluster;
+              serviceVersion.releases.push(reqR);
+              continue;
+            }
+
+            let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
+            let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
+
+            if (primaryArtifact == null)
+              continue;
+
+            let definitionReference: any = primaryArtifact.definitionReference;
+            let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
+
+            if (definitionReference != null) {
+              let rel: any = {
+                definitionReference: definitionReference,
+                releaseName: releaseDetails.name,
+                cluster: r.cluster,
+                releaseId: r.currentRelease.id,
+                envId: envId
+              };
+
+              serviceVersion.releases.push(rel);
+              requestedReleases.push(rel);
+            }
+
           }
 
-          let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
-          let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
-
-          if (primaryArtifact == null)
-            continue;
-
-          let definitionReference: any = primaryArtifact.definitionReference;
-          let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
-
-          if (definitionReference != null) {
-            let rel: any = {
-              definitionReference: definitionReference,
-              releaseName: releaseDetails.name,
-              cluster: r.cluster,
-              releaseId: r.currentRelease.id,
-              envId: envId
-            };
-
-            serviceVersion.releases.push(rel);
-            requestedReleases.push(rel);
-          }
-
+          results.push(serviceVersion);
         }
 
-        results.push(serviceVersion);
+        this.setState({
+          deployments: results
+        });
       }
 
-      this.setState({
-        deployments: results
-      });
     }
   }
 
@@ -159,6 +164,7 @@ class VersionCard extends React.Component<any, any> {
     let body = null;
 
     if (tableItems.length > 0) {
+
       for (let i = 0; i < tableItems.length; i++) {
         const row = tableItems.value[i];
         let linkPrimary = EMPTY_CELL;
@@ -234,15 +240,28 @@ class VersionCard extends React.Component<any, any> {
       );
     }
     else {
-      body = (
-        <Grid
-          container
-          alignItems="center"
-          direction="column">
-          <CircularProgress />
-          <Typography>Loading release <code>{this.state.loadingServiceName}</code> ...</Typography>
-        </Grid>
-      );
+      if (this.props.deployments) {
+        body = (
+          <Grid
+            container
+            alignItems="center"
+            direction="column">
+            <CircularProgress />
+            <Typography>Loading release <code>{this.state.loadingServiceName}</code> ...</Typography>
+          </Grid>
+        );
+      }
+      else {
+        body = (
+          <Grid
+            container
+            alignItems="center"
+            direction="column">
+            <Typography>Choose releases to show</Typography>
+          </Grid>
+        );
+      }
+
     }
 
     return (

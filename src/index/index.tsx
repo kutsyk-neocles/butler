@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Chip, FormControl, Input, InputLabel, MenuItem, Paper, Select, Tab, Tabs, Typography } from "@material-ui/core";
+import { Checkbox, Chip, FormControl, Input, InputLabel, ListItemText, MenuItem, Paper, Select, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
@@ -20,6 +20,7 @@ import * as BuildApi from "azure-devops-node-api/BuildApi";
 import * as BuildInterface from "azure-devops-node-api/interfaces/BuildInterfaces";
 import { getTenantsReleasesForDefinition } from "../azure-devops-service";
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { Autocomplete } from "@material-ui/lab";
 
 const theme = createMuiTheme({
   palette: {
@@ -59,19 +60,6 @@ function a11yProps(index: any) {
   };
 }
 
-const names = [
-  'Oliver Hansen',
-  'Van Henry',
-  'April Tucker',
-  'Ralph Hubbard',
-  'Omar Alexander',
-  'Carlos Abbott',
-  'Miriam Wagner',
-  'Bradley Wilkerson',
-  'Virginia Andrews',
-  'Kelly Snyder',
-];
-
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
@@ -94,14 +82,32 @@ class Index extends React.Component<{}, any> {
     this.state = {
       value: 0,
       loading: true,
-      personName: []
+      chosenReleases: [],
+      releasesNames: []
     };
   }
 
-  handleChange = (event: any) => {
+  handleChange = async (event: any, value: any) => {
+    console.log(value);
+    let releaseNames = value;
     this.setState({
-      personName: event.target.value
+      chosenReleases: releaseNames
     });
+
+
+    if (this.state.releaseApiObject) {
+      let deployments = [];
+      for (let r of releaseNames) {
+        console.log(r);
+        //     const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r);
+        //     console.log(releaseAzure);
+        //     //     const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
+        //     //     deployments.push(deployment);
+      }
+      //   //   this.setState({
+      //   //     deployments: deployments
+      //   //   });
+    }
   };
 
   handleChangeMultiple = (event: any) => {
@@ -114,7 +120,7 @@ class Index extends React.Component<{}, any> {
     }
 
     this.setState({
-      personName: value
+      chosenReleases: value
     });
   };
 
@@ -133,16 +139,20 @@ class Index extends React.Component<{}, any> {
     let authHandler = azdev.getHandlerFromToken(accessToken);
     let webApi = new azdev.WebApi(OrgUrl, authHandler);
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const releasesAZ: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, "-CD");
-
-    const deployments: any = await getTenantsReleasesForDefinition(releasesAZ, releaseApiObject);
 
     this.setState({
-      loading: false
+      releaseApiObject: releaseApiObject
     });
 
+    const allReleases: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
+    let releasesNames = [];
+    for (let release of allReleases) {
+      releasesNames.push(release.name);
+    }
+
     this.setState({
-      deployments: deployments
+      releasesNames: releasesNames,
+      loading: false
     });
   }
 
@@ -175,31 +185,27 @@ class Index extends React.Component<{}, any> {
 
       return (
         <div style={{ width: "100%" }}>
-          <FormControl>
-            <InputLabel id="demo-mutiple-chip-label">Chip</InputLabel>
-            <Select
-              labelId="demo-mutiple-chip-label"
-              id="demo-mutiple-chip"
-              multiple
-              value={this.state.personName}
-              onChange={this.handleChange}
-              input={<Input id="select-multiple-chip" />}
-              renderValue={(selected: any) => (
-                <div>
-                  {selected.map((value: any) => (
-                    <Chip key={value} label={value} />
-                  ))}
-                </div>
-              )}
-              MenuProps={MenuProps}
-            >
-              {names.map((name) => (
-                <MenuItem key={name} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Paper variant="outlined">
+            <Grid container spacing={1}>
+              <Grid item xs={12} sm={6} md={4}>
+                <Autocomplete
+                  multiple
+                  id="tags-outlined"
+                  options={this.state.releasesNames}
+                  onChange={this.handleChange}
+                  filterSelectedOptions
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      variant="outlined"
+                      label="Releases"
+                      placeholder="Please choose"
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
           <AppBar position="static">
             <Tabs value={this.state.value} onChange={this.handleTabChange}
               variant="scrollable"
