@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Checkbox, Chip, FormControl, Input, InputLabel, ListItemText, MenuItem, Paper, Select, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
+import { Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Input, InputLabel, ListItemText, MenuItem, Paper, Select, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 
 import * as azdev from "azure-devops-node-api";
@@ -22,9 +22,38 @@ import { Autocomplete } from "@material-ui/lab";
 import * as _ from "lodash";
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
+import { TreeViewComponent } from "@syncfusion/ej2-react-navigations";
+import { ContactlessOutlined } from "@material-ui/icons";
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+let countries = [
+  { id: 1, name: 'Australia', hasChild: true, expanded: true },
+  { id: 2, pid: 1, name: 'New South Wales' },
+  { id: 3, pid: 1, name: 'Victoria' },
+  { id: 4, pid: 1, name: 'South Australia' },
+  { id: 6, pid: 1, name: 'Western Australia' },
+  { id: 7, name: 'Brazil', hasChild: true },
+  { id: 8, pid: 7, name: 'Paraná' },
+  { id: 9, pid: 7, name: 'Ceará' },
+  { id: 10, pid: 7, name: 'Acre' },
+  { id: 11, name: 'China', hasChild: true },
+  { id: 12, pid: 11, name: 'Guangzhou' },
+  { id: 13, pid: 11, name: 'Shanghai' },
+  { id: 14, pid: 11, name: 'Beijing' },
+  { id: 15, pid: 11, name: 'Shantou' },
+  { id: 16, name: 'France', hasChild: true },
+  { id: 17, pid: 16, name: 'Pays de la Loire' },
+  { id: 18, pid: 16, name: 'Aquitaine' },
+  { id: 19, pid: 16, name: 'Brittany' },
+  { id: 20, pid: 16, name: 'Lorraine' },
+  { id: 21, name: 'India', hasChild: true },
+  { id: 22, pid: 21, name: 'Assam' },
+  { id: 23, pid: 21, name: 'Bihar' },
+  { id: 24, pid: 21, name: 'Tamil Nadu' },
+  { id: 25, pid: 21, name: 'Punjab' }
+];
 
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
@@ -65,27 +94,45 @@ const MenuProps = {
 };
 
 class Index extends React.Component<{}, any> {
+  checkedNodes: any;
 
   constructor(props: {}) {
     super(props);
-    this.setToken = this.setToken.bind(this);
     this.handleChange = this.handleChange.bind(this);
-    this.handleTabChange = this.handleTabChange.bind(this);
+    this.handleEnvTabChange = this.handleEnvTabChange.bind(this);
+    this.handleOpenReleasesDialog = this.handleOpenReleasesDialog.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+    this.handleReleaseNodeCheck = this.handleReleaseNodeCheck.bind(this);
 
     this.state = {
       value: 0,
       loading: true,
       chosenReleases: [],
-      releasesNames: []
+      releasesNames: [],
+      open: false,
+      field: { dataSource: countries, id: 'id', parentID: 'pid', text: 'name', hasChildren: 'hasChild' },
     };
   }
+
+  handleOpenReleasesDialog = () => {
+    this.setState({
+      open: true
+    });
+  };
+
+  handleClose = () => {
+    this.setState({
+      open: false
+    });
+  };
+
 
   handleChange = async (event: any, value: any) => {
     let releases = value;
     this.setState({
       chosenReleases: releases
     });
-    
+
     if (this.state.releaseApiObject) {
       let processedDeployments = {};
       let deployments = {};
@@ -94,15 +141,18 @@ class Index extends React.Component<{}, any> {
         const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
         deployments = _.merge(processedDeployments, deployment);
       }
-      
+
       this.setState({
         deployments: deployments
       });
     }
-    
   };
 
-  handleTabChange(event: any, value: any) {
+  handleReleaseNodeCheck(args: any) {
+    console.log(`this.checkedNodes: ${this.checkedNodes}`);
+  }
+
+  handleEnvTabChange(event: any, value: any) {
     this.setState({
       value: value
     });
@@ -111,7 +161,7 @@ class Index extends React.Component<{}, any> {
   public async componentDidMount() {
     await SDK.init();
     const accessToken = await SDK.getAccessToken();
-    this.setToken(accessToken);
+    this.setState({ token: accessToken });
 
     let authHandler = azdev.getHandlerFromToken(accessToken);
     let webApi = new azdev.WebApi(OrgUrl, authHandler);
@@ -125,8 +175,8 @@ class Index extends React.Component<{}, any> {
     let releasesNames = [];
     for (let release of allReleases) {
       releasesNames.push({
-       name: release.name,
-       path: release?.path?.substring(1) ?? ''
+        name: release.name,
+        path: release?.path?.substring(1) ?? ''
       });
     }
 
@@ -134,10 +184,6 @@ class Index extends React.Component<{}, any> {
       releasesNames: releasesNames,
       loading: false
     });
-  }
-
-  setToken(credentials: string) {
-    this.setState({ token: credentials });
   }
 
   public render(): JSX.Element {
@@ -198,10 +244,32 @@ class Index extends React.Component<{}, any> {
                   )}
                 />
               </Grid>
+              <Grid item xs={12} sm={6} md={6}>
+                <Button variant="outlined" color="primary" onClick={this.handleOpenReleasesDialog}>
+                  Open dialog
+                </Button>
+
+                <Dialog onClose={this.handleClose} aria-labelledby="customized-dialog-title" open={this.state.open}>
+                  <DialogTitle id="customized-dialog-title">
+                    Choose releases
+                  </DialogTitle>
+                  <DialogContent dividers>
+                    <TreeViewComponent
+                    fields={this.state.field} 
+                    nodeChecked={this.handleReleaseNodeCheck} 
+                    checkedNodes={this.checkedNodes} />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button autoFocus onClick={this.handleClose} color="primary">
+                      Save changes
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+              </Grid>
             </Grid>
           </Paper>
           <AppBar position="static">
-            <Tabs value={this.state.value} onChange={this.handleTabChange}
+            <Tabs value={this.state.value} onChange={(event: any, value: any) => this.setState({ value })}
               variant="scrollable"
               scrollButtons="auto"
               aria-label="envs tab">

@@ -5,6 +5,7 @@
       "sourceMap": true,
       "noImplicitAny": true,
       "noImplicitThis": true,
+      "allowSyntheticDefaultImports": true,
       "forceConsistentCasingInFileNames": true,
       "strict": true,
       "target": "es6",

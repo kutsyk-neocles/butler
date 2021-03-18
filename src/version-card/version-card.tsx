@@ -185,7 +185,7 @@ class VersionCard extends React.Component<any, any> {
     }
 
     return results;
-  }
+  } 
 
   async loadData(e: any, expanded: boolean) {
     if (expanded && this.props.deployments && this.state.deployments.length != this.props.deployments.length) {
@@ -280,7 +280,7 @@ class VersionCard extends React.Component<any, any> {
           aria-controls="additional-actions3-content"
           id="additional-actions3-header"
         >
-          <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)}</Typography>
+          <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)} Hello</Typography>
           <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
         </AccordionSummary>
 
