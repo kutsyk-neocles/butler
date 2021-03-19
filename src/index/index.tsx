@@ -28,33 +28,6 @@ import { ContactlessOutlined } from "@material-ui/icons";
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
 
-let countries = [
-  { id: 1, name: 'Australia', hasChild: true, expanded: true },
-  { id: 2, pid: 1, name: 'New South Wales' },
-  { id: 3, pid: 1, name: 'Victoria' },
-  { id: 4, pid: 1, name: 'South Australia' },
-  { id: 6, pid: 1, name: 'Western Australia' },
-  { id: 7, name: 'Brazil', hasChild: true },
-  { id: 8, pid: 7, name: 'Paraná' },
-  { id: 9, pid: 7, name: 'Ceará' },
-  { id: 10, pid: 7, name: 'Acre' },
-  { id: 11, name: 'China', hasChild: true },
-  { id: 12, pid: 11, name: 'Guangzhou' },
-  { id: 13, pid: 11, name: 'Shanghai' },
-  { id: 14, pid: 11, name: 'Beijing' },
-  { id: 15, pid: 11, name: 'Shantou' },
-  { id: 16, name: 'France', hasChild: true },
-  { id: 17, pid: 16, name: 'Pays de la Loire' },
-  { id: 18, pid: 16, name: 'Aquitaine' },
-  { id: 19, pid: 16, name: 'Brittany' },
-  { id: 20, pid: 16, name: 'Lorraine' },
-  { id: 21, name: 'India', hasChild: true },
-  { id: 22, pid: 21, name: 'Assam' },
-  { id: 23, pid: 21, name: 'Bihar' },
-  { id: 24, pid: 21, name: 'Tamil Nadu' },
-  { id: 25, pid: 21, name: 'Punjab' }
-];
-
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
 
@@ -93,15 +66,124 @@ const MenuProps = {
   },
 };
 
+function getReleasesFolderStructure(allReleases: any, releasesFolders: any) {
+  for (let release of allReleases) {
+    let relPath: string = release?.path?.substring(1) ?? "";
+    let folderStructure = relPath.split('\\');
+    let releaseFolder: any = releasesFolders;
+
+    if (folderStructure.length > 1) {
+      for (let j = 0; j < folderStructure.length; j++) {
+        let folder = folderStructure[j];
+        if (j != folderStructure.length - 1)
+          releaseFolder = releaseFolder.find((f: any) => f.id == folder).children;
+        else
+          releaseFolder = releaseFolder.find((f: any) => f.id == folder);
+      }
+    }
+    else {
+      releaseFolder = releasesFolders.find((f: any) => f.id == folderStructure[0]);
+    }
+
+    if (releaseFolder) {
+      if (!releaseFolder['releases'])
+        releaseFolder['releases'] = [];
+
+      releaseFolder['releases'].push(release.name);
+    }
+    else {
+      console.log(`relPath: ${relPath}`);
+    }
+  }
+}
+
+function getReleasesChooserStructure(index: number, parentId: any, releaseFolder: any) {
+  let result: Array<any> = [];
+  let thisFolder: any = {
+    id: index++,
+    name: releaseFolder.id,
+    hasChild: releaseFolder.children.length > 0 || releaseFolder.releases.length > 0
+  };
+  if (parentId != null) {
+    thisFolder['pid'] = parentId;
+  }
+
+  if (thisFolder.name.length > 0)
+    result.push(thisFolder);
+
+  let childParentId = null;
+  if (thisFolder.name.length > 0) {
+    childParentId = thisFolder.id;
+  }
+
+  for (let rel of releaseFolder.releases) {
+    let relObj: any = { id: index++, name: rel };
+    if (childParentId != null)
+      relObj['pid'] = childParentId;
+    result.push(relObj);
+  }
+
+  if (thisFolder.hasChild) {
+    for (let relChild of releaseFolder.children) {
+      let childRes = getReleasesChooserStructure(index, childParentId, relChild);
+      result = result.concat(childRes);
+      index += childRes.length;
+    }
+  }
+
+  return result;
+}
+
+function genTree(row: any): any {
+  const [parent, ...children] = row.split('\\');
+
+  if (!children || children.length === 0) {
+    return [{
+      id: parent,
+      children: []
+    }];
+  }
+
+  return [{
+    id: parent,
+    children: genTree(children.join('\\'))
+  }];
+};
+
+function mergeDeep(children: any) {
+  const res = children.reduce((result: any, curr: any) => {
+    const entry = curr;
+    const existing = result.find((e: any) => e.id === entry.id);
+
+    if (existing) {
+      existing.children = [].concat(existing.children, entry.children);
+    } else {
+      result.push(entry);
+    }
+
+    return result;
+  }, []);
+
+  for (let i = 0; i < res.length; i++) {
+    const entry = res[i];
+    if (entry.children && entry.children.length > 0) {
+      entry.children = mergeDeep(entry.children);
+    }
+  };
+
+  return res;
+}
+
 class Index extends React.Component<{}, any> {
   checkedNodes: any;
+  showCheckBox: boolean = true;
 
   constructor(props: {}) {
     super(props);
     this.handleChange = this.handleChange.bind(this);
     this.handleEnvTabChange = this.handleEnvTabChange.bind(this);
     this.handleOpenReleasesDialog = this.handleOpenReleasesDialog.bind(this);
-    this.handleClose = this.handleClose.bind(this);
+    this.handleCloseReleaseDIalog = this.handleCloseReleaseDIalog.bind(this);
     this.handleReleaseNodeCheck = this.handleReleaseNodeCheck.bind(this);
 
     this.state = {
@@ -110,7 +192,7 @@ class Index extends React.Component<{}, any> {
       chosenReleases: [],
       releasesNames: [],
       open: false,
-      field: { dataSource: countries, id: 'id', parentID: 'pid', text: 'name', hasChildren: 'hasChild' },
+      resourcesField: {}
     };
   }
 
@@ -120,15 +202,14 @@ class Index extends React.Component<{}, any> {
     });
   };
 
-  handleClose = () => {
+  handleCloseReleaseDIalog = () => {
     this.setState({
       open: false
     });
   };
 
 
-  handleChange = async (event: any, value: any) => {
-    let releases = value;
+  handleChange = async (event: any, releases: any) => {
     this.setState({
       chosenReleases: releases
     });
@@ -161,37 +242,46 @@ class Index extends React.Component<{}, any> {
   public async componentDidMount() {
     await SDK.init();
     const accessToken = await SDK.getAccessToken();
-    this.setState({ token: accessToken });
-
-    let authHandler = azdev.getHandlerFromToken(accessToken);
-    let webApi = new azdev.WebApi(OrgUrl, authHandler);
+    const authHandler = azdev.getHandlerFromToken(accessToken);
+    const webApi = new azdev.WebApi(OrgUrl, authHandler);
     const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-
-    this.setState({
-      releaseApiObject: releaseApiObject
-    });
-
     const allReleases: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
-    let releasesNames = [];
-    for (let release of allReleases) {
-      releasesNames.push({
-        name: release.name,
-        path: release?.path?.substring(1) ?? ''
-      });
-    }
 
+    this.setState({ releaseApiObject: releaseApiObject, token: accessToken });
+
+    let releasesNames: any = [];
+    let releaseChooser: any = [];
+    let i: number = 0;
+    const paths: Array<string> = [];
+    for (let release of allReleases) {
+      let relPath: string = release?.path?.substring(1) ?? "";
+      paths.push(relPath);
+    }
+    const releasesFolders = mergeDeep(paths.map(genTree).map(([e]) => e));
+    getReleasesFolderStructure(allReleases, releasesFolders);
+
+    let chooserIndex = 0;
+
+    for (let f of releasesFolders) {
+      let structure = getReleasesChooserStructure(chooserIndex, null, f);
+      chooserIndex += structure.length;
+      releaseChooser = releaseChooser.concat(structure);
+    }
+    console.log(releaseChooser);
     this.setState({
       releasesNames: releasesNames,
+      resourcesField: { dataSource: releaseChooser, id: 'id', parentID: 'pid', text: 'name', hasChildren: 'hasChild' },
       loading: false
     });
+
   }
 
   public render(): JSX.Element {
     if (!this.state.loading) {
-      const tabs = [];
-      const tabsPanels = [];
+      const tabs: Array<any> = [];
+      const tabsPanels: Array<any> = [];
       for (const [i, env] of Environments.entries()) {
-        const versionItems = [];
+        const versionItems: Array<any> = [];
         tabs.push(<Tab key={i + 'tab'} label={`${env}`} {...a11yProps(i)} />)
 
         for (const [j, tenant] of Tenants.entries()) {
@@ -214,7 +304,7 @@ class Index extends React.Component<{}, any> {
           <Paper variant="outlined">
             <Grid container spacing={1}>
               <Grid item xs={12} sm={6} md={6}>
-                <Autocomplete
+                {/* <Autocomplete
                   multiple
                   id="releases-select"
                   groupBy={(option) => option.path}
@@ -242,25 +332,26 @@ class Index extends React.Component<{}, any> {
                       placeholder="Please choose"
                     />
                   )}
-                />
+                /> */}
               </Grid>
               <Grid item xs={12} sm={6} md={6}>
                 <Button variant="outlined" color="primary" onClick={this.handleOpenReleasesDialog}>
-                  Open dialog
+                  Releases
                 </Button>
 
-                <Dialog onClose={this.handleClose} aria-labelledby="customized-dialog-title" open={this.state.open}>
+                <Dialog onClose={this.handleCloseReleaseDIalog} aria-labelledby="customized-dialog-title" open={this.state.open}>
                   <DialogTitle id="customized-dialog-title">
                     Choose releases
                   </DialogTitle>
-                  <DialogContent dividers>
+                  <DialogContent dividers style={{ width: '480px' }}>
                     <TreeViewComponent
-                    fields={this.state.field} 
-                    nodeChecked={this.handleReleaseNodeCheck} 
-                    checkedNodes={this.checkedNodes} />
+                      fields={this.state.resourcesField}
+                      showCheckBox={this.showCheckBox}
+                      nodeChecked={this.handleReleaseNodeCheck}
+                      checkedNodes={this.checkedNodes} />
                   </DialogContent>
                   <DialogActions>
-                    <Button autoFocus onClick={this.handleClose} color="primary">
+                    <Button autoFocus onClick={this.handleCloseReleaseDIalog} color="primary">
                       Save changes
                     </Button>
                   </DialogActions>

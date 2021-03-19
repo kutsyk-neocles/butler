@@ -63,7 +63,7 @@ function getTableRow(tableItemsValue: any, i: number) {
   }
 
   let defRef = row.releases[0].definitionReference;
-  let link = null;
+  let link: any = null;
 
   if (row.releases[0] && defRef) {
     link = (<Link target="_blank" href={row.releases[0] != null ? getUriForBuildId(defRef.version.id) : "#"}>{defRef.version.name}</Link>);
@@ -133,14 +133,14 @@ class VersionCard extends React.Component<any, any> {
   }
 
   async getReleasesDetails(releaseApiObject: any) {
-    const results = [];
+    const results: Array<any> = [];
     for (var serviceName of Object.keys(this.props.deployments)) {
       this.setState({
         loadingServiceName: serviceName
       });
 
       let releases = this.props.deployments[serviceName];
-      let serviceVersion = {
+      let serviceVersion: any = {
         serviceName: serviceName,
         releases: Array<any>()
       };
@@ -210,9 +210,9 @@ class VersionCard extends React.Component<any, any> {
 
   public render(): JSX.Element {
     const tableItems: ObservableArray<IEpicuroVersion> = new ObservableArray(this.state.deployments);
-    const tableRows = [];
+    const tableRows: Array<any> = [];
     const { classes } = this.props;
-    let body = null;
+    let body: any = null;
 
     if (tableItems.length > 0) {
 
@@ -280,7 +280,7 @@ class VersionCard extends React.Component<any, any> {
           aria-controls="additional-actions3-content"
           id="additional-actions3-header"
         >
-          <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)} Hello</Typography>
+          <Typography className={classes.primaryHeader}>{sentenceCase(this.props.tenant.name)}</Typography>
           <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
         </AccordionSummary>
 
