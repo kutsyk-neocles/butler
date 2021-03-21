@@ -26,6 +26,7 @@
     "@material-ui/styles": "^4.11.3",
     "@syncfusion/ej2-react-navigations": "^18.4.47",
     "@syncfusion/ej2-react-splitbuttons": "^18.4.41",
+    "@syncfusion/ej2-react-treegrid": "^18.4.48",
     "azure-devops-extension-api": "^1.152.0",
     "azure-devops-extension-sdk": "^2.0.7",
     "azure-devops-node-api": "^10.2.1",

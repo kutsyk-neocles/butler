@@ -9,7 +9,7 @@ import { getEnvForDeploymentName, Environments, getClusterForDeploymentName } fr
 import AppBar from '@material-ui/core/AppBar';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
-import { Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Input, InputLabel, ListItemText, MenuItem, Paper, Select, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
+import { Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, Input, InputLabel, ListItemText, MenuItem, Paper, Select, Tab, Tabs, TextField, Toolbar, Typography } from "@material-ui/core";
 import VersionCard from "../version-card/version-card";
 import * as azdev from "azure-devops-node-api";
 import { AzureDevOpsProjectId, OrgUrl } from "../azure-devops-values";
@@ -24,6 +24,21 @@ import { TreeViewComponent } from "@syncfusion/ej2-react-navigations";
 import { ProgressButtonComponent, SpinSettingsModel, AnimationSettingsModel } from '@syncfusion/ej2-react-splitbuttons';
 import update from 'react-addons-update';
 import * as _ from "lodash";
+
+const PredefindReleases = [
+  { name: "Backend - API" },
+  { name: "Backend - Import Website" },
+  { name: "Backend - Webjobs" },
+  { name: "Frontend - Console V2" },
+  { name: "Frontend - UI" },
+  { name: "GraphQL" },
+  { name: "accounts-api-CD" },
+  { name: "baskets-api-CD" },
+  { name: "feed-api-CD" },
+  { name: "lists-api-CD" },
+  { name: "products-API-CD" },
+  { name: "pulse-CD" }
+];
 
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
@@ -103,7 +118,8 @@ function getReleasesChooserStructure(index: number, parentId: any, releaseFolder
   }
 
   for (let rel of releaseFolder.releases) {
-    let relObj: any = { id: index++, name: rel };
+    let isInPredefined = (PredefindReleases.find(r => r.name == rel) != null);
+    let relObj: any = { id: index++, name: rel, isChecked: isInPredefined };
     if (childParentId != null)
       relObj['pid'] = childParentId;
     result.push(relObj);
@@ -168,15 +184,17 @@ class Index extends React.Component<{}, any> {
   constructor(props: {}) {
     super(props);
     this.handleOpenReleasesDialog = this.handleOpenReleasesDialog.bind(this);
-    this.handleCloseReleaseDialog = this.handleCloseReleaseDialog.bind(this);
+    this.handleSaveReleaseDialog = this.handleSaveReleaseDialog.bind(this);
     this.handleReleaseNodeCheck = this.handleReleaseNodeCheck.bind(this);
     this.renderReleaseChooserDialog = this.renderReleaseChooserDialog.bind(this);
+    this.refreshReleases = this.refreshReleases.bind(this);
+    this.getReleasesAndFolders = this.getReleasesAndFolders.bind(this);
 
     this.state = {
       value: 0,
       loading: true,
       saving: false,
-      chosenReleases: [],
+      chosenReleases: PredefindReleases,
       open: false,
       releasesForChooser: {}
     };
@@ -189,13 +207,16 @@ class Index extends React.Component<{}, any> {
   };
 
   handleCloseReleaseDialog = async () => {
-    if (this.state.releaseApiObject) {
+    this.setState({
+      open: false
+    });
+  }
+
+  handleSaveReleaseDialog = async () => {
+    if (this.state.releaseApiObject && this.treeRef) {
       this.setState({
         saving: true
       });
-
-      let processedDeployments = {};
-      let deployments = {};
 
       if (this.state.releasesForChooser.dataSource) {
         let relesesFromChooser = this.state.releasesForChooser.dataSource;
@@ -211,6 +232,15 @@ class Index extends React.Component<{}, any> {
         });
       }
 
+      await this.refreshReleases();
+    }
+  };
+
+  async refreshReleases() {
+    if (this.state.releaseApiObject) {
+      let processedDeployments = {};
+      let deployments = {};
+
       for (let r of this.state.chosenReleases) {
         const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r.name);
         const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
@@ -223,33 +253,10 @@ class Index extends React.Component<{}, any> {
         saving: false
       });
     }
-  };
-
-  handleReleaseNodeCheck(args: any) {
-    let releases: Array<any> = [];
-    if (this.state.releasesForChooser.dataSource) {
-      let relesesFromChooser = this.state.releasesForChooser.dataSource;
-      
-      for (let i of this.treeRef.checkedNodes) {
-        releases.push(relesesFromChooser[i]);
-      }
-
-      this.setState({
-        chosenReleases: releases
-      });
-    }
   }
 
-  public async componentDidMount() {
-    await SDK.init();
-    const accessToken = await SDK.getAccessToken();
-    const authHandler = azdev.getHandlerFromToken(accessToken);
-    const webApi = new azdev.WebApi(OrgUrl, authHandler);
-    const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
-    const allReleases: ReleaseInterfaces.ReleaseDefinition[] = await releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
-
-    this.setState({ releaseApiObject: releaseApiObject, token: accessToken });
-
+  async getReleasesAndFolders() {
+    const allReleases: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId);
     const paths: Array<string> = allReleases.map(r => r?.path?.substring(1) ?? "");
     const releasesFolders = mergeDeep(paths.map(genTree).map(([e]) => e));
     getReleasesFolderStructure(allReleases, releasesFolders);
@@ -266,6 +273,35 @@ class Index extends React.Component<{}, any> {
       releasesForChooser: { dataSource: releaseChooser, id: 'id', parentID: 'pid', text: 'name', hasChildren: 'hasChild' },
       loading: false
     });
+  }
+
+  handleReleaseNodeCheck(args: any) {
+    let releases: Array<any> = [];
+    if (this.state.releasesForChooser.dataSource) {
+      let relesesFromChooser = this.state.releasesForChooser.dataSource;
+
+      for (let i of this.treeRef.checkedNodes) {
+        releases.push(relesesFromChooser[i]);
+        console.log(relesesFromChooser[i].name);
+      }
+
+      this.setState({
+        chosenReleases: releases
+      });
+    }
+  }
+
+  public async componentDidMount() {
+    await SDK.init();
+    const accessToken = await SDK.getAccessToken();
+    const authHandler = azdev.getHandlerFromToken(accessToken);
+    const webApi = new azdev.WebApi(OrgUrl, authHandler);
+    const releaseApiObject: ReleaseApi.IReleaseApi = await webApi.getReleaseApi();
+
+    this.setState({ releaseApiObject: releaseApiObject, token: accessToken });
+
+    this.refreshReleases();
+    this.getReleasesAndFolders();
   }
 
   renderReleaseChooserDialog() {
@@ -287,7 +323,7 @@ class Index extends React.Component<{}, any> {
         checkedNodes={this.checkedNodes} />);
 
     return (
-      <Dialog onClose={this.handleCloseReleaseDialog} aria-labelledby="customized-dialog-title" open={this.state.open}>
+      <Dialog onClose={this.handleSaveReleaseDialog} aria-labelledby="customized-dialog-title" open={this.state.open}>
         <DialogTitle id="customized-dialog-title">
           Choose releases
       </DialogTitle>
@@ -295,7 +331,8 @@ class Index extends React.Component<{}, any> {
           {dialogBody}
         </DialogContent>
         <DialogActions>
-          <Button autoFocus color="primary" onClick={this.handleCloseReleaseDialog}>Save</Button>
+          <Button autoFocus color="primary" onClick={this.handleCloseReleaseDialog}>Close</Button>
+          <Button autoFocus color="primary" onClick={this.handleSaveReleaseDialog}>Save</Button>
         </DialogActions>
       </Dialog >);
   }
@@ -324,10 +361,14 @@ class Index extends React.Component<{}, any> {
       }
 
       return (
-        <div style={{ width: "100%" }}>
-          <Paper variant="outlined">
+        <div style={{ width: "100%", flexGrow: 1 }}>
+          <Paper>
             <Grid container spacing={1}>
-              <Grid item xs={12} sm={6} md={6}>
+              <Grid item xs={8} sm={10} md={10}>
+              </Grid>
+              <Grid item xs={4} sm={2} md={2}>
+                <div style={{ width: '100%' }} />
+                <div style={{ flexGrow: 1 }} />
                 <Button size="small" color="primary"
                   onClick={this.handleOpenReleasesDialog}
                   startIcon={<TuneIcon />}>
