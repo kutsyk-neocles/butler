@@ -22,6 +22,7 @@ import TuneIcon from '@material-ui/icons/Tune';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import { TreeViewComponent } from "@syncfusion/ej2-react-navigations";
 import { ProgressButtonComponent, SpinSettingsModel, AnimationSettingsModel } from '@syncfusion/ej2-react-splitbuttons';
+import update from 'react-addons-update';
 import * as _ from "lodash";
 
 function TabPanel(props: any) {
@@ -166,7 +167,6 @@ class Index extends React.Component<{}, any> {
 
   constructor(props: {}) {
     super(props);
-    this.handleEnvTabChange = this.handleEnvTabChange.bind(this);
     this.handleOpenReleasesDialog = this.handleOpenReleasesDialog.bind(this);
     this.handleCloseReleaseDialog = this.handleCloseReleaseDialog.bind(this);
     this.handleReleaseNodeCheck = this.handleReleaseNodeCheck.bind(this);
@@ -193,8 +193,24 @@ class Index extends React.Component<{}, any> {
       this.setState({
         saving: true
       });
+
       let processedDeployments = {};
       let deployments = {};
+
+      if (this.state.releasesForChooser.dataSource) {
+        let relesesFromChooser = this.state.releasesForChooser.dataSource;
+        for (let i of this.treeRef.checkedNodes) {
+          relesesFromChooser[i].isChecked = true;
+        }
+
+        this.setState({
+          releasesForChooser: {
+            datasource: relesesFromChooser,
+            ...this.state.releasesForChooser
+          }
+        });
+      }
+
       for (let r of this.state.chosenReleases) {
         const releaseAzure: ReleaseInterfaces.ReleaseDefinition[] = await this.state.releaseApiObject.getReleaseDefinitions(AzureDevOpsProjectId, r.name);
         const deployment: any = await getTenantsReleasesForDefinition(releaseAzure, this.state.releaseApiObject);
@@ -212,19 +228,16 @@ class Index extends React.Component<{}, any> {
   handleReleaseNodeCheck(args: any) {
     let releases: Array<any> = [];
     if (this.state.releasesForChooser.dataSource) {
+      let relesesFromChooser = this.state.releasesForChooser.dataSource;
+      
       for (let i of this.treeRef.checkedNodes) {
-        releases.push(this.state.releasesForChooser.dataSource[i]);
+        releases.push(relesesFromChooser[i]);
       }
+
       this.setState({
         chosenReleases: releases
       });
     }
-  }
-
-  handleEnvTabChange(event: any, value: any) {
-    this.setState({
-      value: value
-    });
   }
 
   public async componentDidMount() {
@@ -273,17 +286,18 @@ class Index extends React.Component<{}, any> {
         nodeChecked={this.handleReleaseNodeCheck}
         checkedNodes={this.checkedNodes} />);
 
-    return (<Dialog onClose={this.handleCloseReleaseDialog} aria-labelledby="customized-dialog-title" open={this.state.open}>
-      <DialogTitle id="customized-dialog-title">
-        Choose releases
-    </DialogTitle>
-      <DialogContent dividers style={{ width: '480px' }}>
-        {dialogBody}
-      </DialogContent>
-      <DialogActions>
-        <Button autoFocus color="primary" onClick={this.handleCloseReleaseDialog}>Save</Button>
-      </DialogActions>
-    </Dialog >);
+    return (
+      <Dialog onClose={this.handleCloseReleaseDialog} aria-labelledby="customized-dialog-title" open={this.state.open}>
+        <DialogTitle id="customized-dialog-title">
+          Choose releases
+      </DialogTitle>
+        <DialogContent dividers style={{ width: '480px' }}>
+          {dialogBody}
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus color="primary" onClick={this.handleCloseReleaseDialog}>Save</Button>
+        </DialogActions>
+      </Dialog >);
   }
 
   public render(): JSX.Element {
