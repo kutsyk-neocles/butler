@@ -55,6 +55,7 @@ export async function getTenantsReleasesForDefinition(releaseDefinitons: Release
                         deployments[tenant.name][env][definitionName] = [];
 
                     deployments[tenant.name][env][definitionName].push({
+                        definitionId: defId,
                         currentRelease: defEnv.currentRelease,
                         envId: environemntId,
                         cluster: getClusterForDeploymentName(deploymentName)

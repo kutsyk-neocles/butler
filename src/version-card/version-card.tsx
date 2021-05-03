@@ -158,7 +158,19 @@ class VersionCard extends React.Component<any, any> {
           continue;
         }
 
-        let releaseDetails: ReleaseInterfaces.Release = await releaseApiObject.getRelease(AzureDevOpsProjectId, r.currentRelease.id);
+        let deploymentsForReleasEnv = await releaseApiObject.getDeployments(AzureDevOpsProjectId, r.definitionId, r.envId, 
+          null, 
+          null,
+          null,
+          ReleaseInterfaces.DeploymentStatus.Succeeded,
+          null,
+          true, null, 1);
+        
+        let latestDeployment = deploymentsForReleasEnv[0];
+        if (!latestDeployment)
+          throw new Error(`No latest deployment for ${r}`);
+        
+        let releaseDetails = latestDeployment.release;
         let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
 
         if (primaryArtifact == null)
