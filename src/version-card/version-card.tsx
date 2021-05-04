@@ -190,7 +190,10 @@ class VersionCard extends React.Component<any, any> {
 
         let latestDeployment = deploymentsForReleasEnv[0];
         if (!latestDeployment)
-          throw new Error(`No latest deployment for ${r}`);
+        {
+          console.log(`No latest deployment for ${JSON.stringify(r)}`);
+          continue;
+        }
 
         let releaseDetails = latestDeployment.release;
         let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
