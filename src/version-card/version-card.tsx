@@ -46,8 +46,6 @@ function getTableRow(tableItemsValue: any, i: number) {
   let branchPrimary = EMPTY_CELL;
   let branchSecondary = EMPTY_CELL;
 
-  console.log(row);
-
   if (!row.releases[0])
     return null;
 
@@ -76,6 +74,26 @@ function getTableRow(tableItemsValue: any, i: number) {
     link = ("-");
   }
 
+  let primaryVersion = (
+    <div>
+      <div>
+        {linkPrimary}
+      </div>
+      <div>
+        <Chip label={branchPrimary} />
+      </div>
+    </div>);
+
+  let secondaryVersion = linkSecondary !== EMPTY_CELL ? (
+    <div>
+      <div>
+        {linkSecondary}
+      </div>
+      <div>
+        <Chip label={branchSecondary} />
+      </div>
+    </div>) : EMPTY_CELL;
+
   return (<TableRow key={i}>
     <TableCell>
       {row.serviceName}
@@ -84,20 +102,10 @@ function getTableRow(tableItemsValue: any, i: number) {
       {link}
     </TableCell>
     <TableCell>
-      <div>
-        {linkPrimary}
-      </div>
-      <div>
-        <Chip label={branchPrimary} />
-      </div>
+      {primaryVersion}
     </TableCell>
     <TableCell>
-      <div>
-        {linkSecondary}
-      </div>
-      <div>
-        <Chip label={branchSecondary} />
-      </div>
+      {secondaryVersion}
     </TableCell>
   </TableRow>);
 }
@@ -156,18 +164,21 @@ class VersionCard extends React.Component<any, any> {
         releases: Array<any>()
       };
 
-      const requestedReleases: any[] = [];
+      let requestedReleases: any[] = [];
       for (let r of releases) {
-
         if (!r.currentRelease.id) // release doesn't exist
           continue;
 
-        if (requestedReleases.find(reqR => reqR.id == r.currentRelease.id)) {
-          const reqR = requestedReleases.find(reqR => reqR.id == r.currentRelease.id);
-          reqR.cluster = r.cluster;
-          serviceVersion.releases.push(reqR);
+        const alreadyRequestedRelease = requestedReleases.find(reqR => reqR.releaseId == r.currentRelease.id);
+
+        if (alreadyRequestedRelease != undefined && alreadyRequestedRelease !== null && alreadyRequestedRelease.cluster !== r.cluster) {
+          alreadyRequestedRelease.cluster = r.cluster;
+          serviceVersion.releases.push(alreadyRequestedRelease);
           continue;
         }
+
+        if (alreadyRequestedRelease != undefined && alreadyRequestedRelease !== null && alreadyRequestedRelease.cluster === r.cluster)
+          continue;
 
         let deploymentsForReleasEnv = await releaseApiObject.getDeployments(AzureDevOpsProjectId, r.definitionId, r.envId,
           null,
@@ -183,7 +194,6 @@ class VersionCard extends React.Component<any, any> {
 
         let releaseDetails = latestDeployment.release;
         let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
-        console.log(latestDeployment);
 
         if (primaryArtifact == null)
           continue;
@@ -201,10 +211,11 @@ class VersionCard extends React.Component<any, any> {
           };
 
           serviceVersion.releases.push(rel);
+
           requestedReleases.push(rel);
         }
-
       }
+
       results.push(serviceVersion);
     }
 
