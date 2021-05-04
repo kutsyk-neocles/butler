@@ -17,7 +17,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import AccordionActions from '@material-ui/core/AccordionActions';
-import { Button, CircularProgress, Divider, Grid, Link, Paper } from "@material-ui/core";
+import { Badge, Button, Chip, CircularProgress, Divider, Grid, Link, Paper } from "@material-ui/core";
 import { withStyles } from "@material-ui/styles";
 import { sentenceCase } from "sentence-case";
 
@@ -43,13 +43,16 @@ const styles = (theme: any) => ({
 function getTableRow(tableItemsValue: any, i: number) {
   const row = tableItemsValue;
   let linkPrimary = EMPTY_CELL;
-  let branch = EMPTY_CELL;
+  let branchPrimary = EMPTY_CELL;
+  let branchSecondary = EMPTY_CELL;
+
+  console.log(row);
 
   if (!row.releases[0])
     return null;
 
   if (row.releases[0]) {
-    branch = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
+    branchPrimary = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
     linkPrimary = (
       <Link target="_blank" href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.releaseName}</Link>
     );
@@ -57,6 +60,7 @@ function getTableRow(tableItemsValue: any, i: number) {
 
   let linkSecondary = EMPTY_CELL;
   if (row.releases[1]) {
+    branchSecondary = (<Link href={row.releases[0] != null ? getUriForRelease(row.releases[0].releaseId, row.releases[0].envId) : "#"}>{row.releases[0]?.definitionReference.branches.name}</Link>);
     linkSecondary = (
       <Link target="_blank" href={row.releases[1] != null ? getUriForRelease(row.releases[1].releaseId, row.releases[1].envId) : "#"}>{row.releases[1]?.releaseName}</Link>
     );
@@ -80,13 +84,20 @@ function getTableRow(tableItemsValue: any, i: number) {
       {link}
     </TableCell>
     <TableCell>
-      {branch}
+      <div>
+        {linkPrimary}
+      </div>
+      <div>
+        <Chip label={branchPrimary} />
+      </div>
     </TableCell>
     <TableCell>
-      {linkPrimary}
-    </TableCell>
-    <TableCell>
-      {linkSecondary}
+      <div>
+        {linkSecondary}
+      </div>
+      <div>
+        <Chip label={branchSecondary} />
+      </div>
     </TableCell>
   </TableRow>);
 }
@@ -158,26 +169,27 @@ class VersionCard extends React.Component<any, any> {
           continue;
         }
 
-        let deploymentsForReleasEnv = await releaseApiObject.getDeployments(AzureDevOpsProjectId, r.definitionId, r.envId, 
-          null, 
+        let deploymentsForReleasEnv = await releaseApiObject.getDeployments(AzureDevOpsProjectId, r.definitionId, r.envId,
+          null,
           null,
           null,
           ReleaseInterfaces.DeploymentStatus.Succeeded,
           null,
           true, null, 1);
-        
+
         let latestDeployment = deploymentsForReleasEnv[0];
         if (!latestDeployment)
           throw new Error(`No latest deployment for ${r}`);
-        
+
         let releaseDetails = latestDeployment.release;
         let primaryArtifact = releaseDetails.artifacts?.find(x => x.isPrimary);
+        console.log(latestDeployment);
 
         if (primaryArtifact == null)
           continue;
 
         let definitionReference: any = primaryArtifact.definitionReference;
-        let envId = getEnvironmentForReleaseAndStage(releaseDetails, this.props.tenant.name, this.props.env, r.cluster);
+        let envId = latestDeployment.releaseEnvironment.id;
 
         if (definitionReference != null) {
           let rel: any = {
@@ -197,7 +209,7 @@ class VersionCard extends React.Component<any, any> {
     }
 
     return results;
-  } 
+  }
 
   async loadData(e: any, expanded: boolean) {
     if (expanded && this.props.deployments && this.state.deployments.length != this.props.deployments.length) {
@@ -244,11 +256,10 @@ class VersionCard extends React.Component<any, any> {
           >
             <TableHead>
               <TableRow>
-                <TableCell style={{ width: 120 }}>Service Name</TableCell>
+                <TableCell style={{ width: 100 }}>Service Name</TableCell>
                 <TableCell style={{ width: 80 }}>Artifact</TableCell>
-                <TableCell style={{ width: 80 }}>Branch</TableCell>
-                <TableCell style={{ width: 120 }}>Primary</TableCell>
-                <TableCell style={{ width: 120 }}>Secondary</TableCell>
+                <TableCell style={{ width: 130 }}>Primary</TableCell>
+                <TableCell style={{ width: 130 }}>Secondary</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

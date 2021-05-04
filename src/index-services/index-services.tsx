@@ -1,16 +1,16 @@
 export const PredefindReleases = [
     { name: "Backend - API" },
-    { name: "Backend - Import Website" },
-    { name: "Backend - Webjobs" },
-    { name: "Frontend - Console V2" },
-    { name: "Frontend - UI" },
-    { name: "GraphQL" },
-    { name: "accounts-api-CD" },
-    { name: "baskets-api-CD" },
-    { name: "feed-api-CD" },
-    { name: "lists-api-CD" },
+    // { name: "Backend - Import Website" },
+    // { name: "Backend - Webjobs" },
+    // { name: "Frontend - Console V2" },
+    // { name: "Frontend - UI" },
+    // { name: "GraphQL" },
+    // { name: "accounts-api-CD" },
+    // { name: "baskets-api-CD" },
+    // { name: "feed-api-CD" },
+    // { name: "lists-api-CD" },
     { name: "products-API-CD" },
-    { name: "pulse-CD" }
+    // { name: "pulse-CD" }
 ];
 
 export function getReleasesFolderStructure(allReleases: any, releasesFolders: any) {
