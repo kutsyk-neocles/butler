@@ -9,6 +9,10 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+- name: ExtensionReleaseVersion
+  value: Build.BuildNumber 
+  
 steps:
 - task: Npm@1
   inputs:
@@ -19,4 +23,13 @@ steps:
     command: 'custom'
     customCommand: 'run package'
   displayName: 'npm package'
+- task: ReplaceTokens@1
+  inputs:
+    sourcePath: 
+    filePattern: 'vss-extension.json'
+    tokenRegex: '__(\w+)__'
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: 'tfx extension publish --manifest-globs vss-extension.json --overrides-file configs/release.json -t $(extensionToken)'
 
