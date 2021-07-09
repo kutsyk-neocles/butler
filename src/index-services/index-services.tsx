@@ -5,44 +5,45 @@ export const PredefindReleases = [
     { name: "Frontend - Console V2" },
     { name: "Frontend - UI" },
     { name: "GraphQL" },
-    { name: "accounts-api-CD" },
     { name: "baskets-api-CD" },
+    { name: "gql-api-CD" },
     { name: "feed-api-CD" },
     { name: "lists-api-CD" },
-    { name: "products-API-CD" },
-    { name: "pulse-CD" }
+    { name: "pulse-CD" },
+    { name: "connect-api-CD" },
+    { name: "reporting-system-CD" }
 ];
 
 export function getReleasesFolderStructure(allReleases: any, releasesFolders: any) {
     for (let release of allReleases) {
-      let relPath: string = release?.path?.substring(1) ?? "";
-      let folderStructure = relPath.split('\\');
-      let releaseFolder: any = releasesFolders;
-  
-      if (folderStructure.length > 1) {
-        for (let j = 0; j < folderStructure.length; j++) {
-          let folder = folderStructure[j];
-          if (j != folderStructure.length - 1)
-            releaseFolder = releaseFolder.find((f: any) => f.id == folder).children;
-          else
-            releaseFolder = releaseFolder.find((f: any) => f.id == folder);
+        let relPath: string = release?.path?.substring(1) ?? "";
+        let folderStructure = relPath.split('\\');
+        let releaseFolder: any = releasesFolders;
+
+        if (folderStructure.length > 1) {
+            for (let j = 0; j < folderStructure.length; j++) {
+                let folder = folderStructure[j];
+                if (j != folderStructure.length - 1)
+                    releaseFolder = releaseFolder.find((f: any) => f.id == folder).children;
+                else
+                    releaseFolder = releaseFolder.find((f: any) => f.id == folder);
+            }
         }
-      }
-      else {
-        releaseFolder = releasesFolders.find((f: any) => f.id == folderStructure[0]);
-      }
-  
-      if (releaseFolder) {
-        if (!releaseFolder['releases'])
-          releaseFolder['releases'] = [];
-  
-        releaseFolder['releases'].push(release.name);
-      }
-      else {
-        console.log(`relPath: ${relPath}`);
-      }
+        else {
+            releaseFolder = releasesFolders.find((f: any) => f.id == folderStructure[0]);
+        }
+
+        if (releaseFolder) {
+            if (!releaseFolder['releases'])
+                releaseFolder['releases'] = [];
+
+            releaseFolder['releases'].push(release.name);
+        }
+        else {
+            console.log(`relPath: ${relPath}`);
+        }
     }
-  }
+}
 
 export function a11yProps(index: any) {
     return {
@@ -69,14 +70,17 @@ export function getReleasesChooserStructure(index: number, parentId: any, releas
     if (thisFolder.name.length > 0) {
         childParentId = thisFolder.id;
     }
-
-    for (let rel of releaseFolder.releases) {
-        let isInPredefined = (PredefindReleases.find(r => r.name == rel) != null);
-        let relObj: any = { id: index++, name: rel, isChecked: isInPredefined };
-        if (childParentId != null)
-            relObj['pid'] = childParentId;
-        result.push(relObj);
+    
+    if (releaseFolder.releases) {
+        for (let rel of releaseFolder.releases) {
+            let isInPredefined = (PredefindReleases.find(r => r.name == rel) != null);
+            let relObj: any = { id: index++, name: rel, isChecked: isInPredefined };
+            if (childParentId != null)
+                relObj['pid'] = childParentId;
+            result.push(relObj);
+        }
     }
+
 
     if (thisFolder.hasChild) {
         for (let relChild of releaseFolder.children) {

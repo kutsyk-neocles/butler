@@ -157,7 +157,7 @@ class VersionCard extends React.Component<any, any> {
       this.setState({
         loadingServiceName: serviceName
       });
-
+      console.log(serviceName);
       let releases = this.props.deployments[serviceName];
       let serviceVersion: any = {
         serviceName: serviceName,
