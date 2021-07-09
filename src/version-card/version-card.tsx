@@ -321,7 +321,7 @@ class VersionCard extends React.Component<any, any> {
           <Typography className={classes.secondaryHeader}>{this.props.env}</Typography>
         </AccordionSummary>
 
-        <AccordionDetails>
+        <AccordionDetails style = {{ maxHeight: "640px" }}>
           {body}
         </AccordionDetails>
         <Divider />
