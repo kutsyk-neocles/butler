@@ -17,11 +17,6 @@ steps:
 - task: Npm@1
   inputs:
     command: 'custom'
-    customCommand: 'run build'
-  displayName: 'npm build'
-
-- task: Npm@1
-  inputs:
-    command: 'custom'
     customCommand: 'run package'
   displayName: 'npm package'
+
