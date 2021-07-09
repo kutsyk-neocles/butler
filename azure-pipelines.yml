@@ -11,7 +11,7 @@ pool:
 
 variables:
 - name: ExtensionReleaseVersion
-  value: Build.BuildNumber 
+  value: $(Build.BuildNumber)
   
 steps:
 - task: Npm@1
@@ -28,6 +28,11 @@ steps:
     sourcePath: 
     filePattern: 'vss-extension.json'
     tokenRegex: '__(\w+)__'
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: 'cat vss-extension.json'
+  displayName: 'cat vss-extension.json'
 - task: Bash@3
   inputs:
     targetType: 'inline'
